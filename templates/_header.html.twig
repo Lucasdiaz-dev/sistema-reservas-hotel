@@ -1,0 +1,17 @@
+<header class="top">
+  <a class="brand" href="/"><span class="logo">HL</span>Hotel Litoral</a>
+  <nav class="pillnav">
+    {% if is_granted('ROLE_ADMIN') %}
+      <a href="/admin/reservas">Reservas</a><a href="/admin/habitaciones">Habitaciones</a><a href="/admin/usuarios">Usuarios</a>
+    {% else %}
+      <a href="/">Buscar</a><a href="/reservas">Mis reservas</a><a href="/perfil">Mi perfil</a>
+    {% endif %}
+  </nav>
+  <div class="user">
+    {% if app.user %}
+      <span class="avatar"></span>{{ app.user.nombre }} · <a href="{{ path('app_logout') }}" class="muted">Salir</a>
+    {% else %}
+      <a class="btn" href="{{ path('app_login') }}">Ingresar</a><a class="btn dark" href="{{ path('app_register') }}">Registrarse</a>
+    {% endif %}
+  </div>
+</header>
