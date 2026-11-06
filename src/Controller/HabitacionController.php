@@ -2,8 +2,12 @@
 
 namespace App\Controller;
 
+use App\Entity\Habitacion;
+use App\Form\HabitacionType;
 use App\Manager\HabitacionManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -24,5 +28,43 @@ class HabitacionController extends AbstractController
         return $this->render('admin/habitaciones/index.html.twig', [
             'habitaciones' => $listaDeHabitaciones,
         ]);
+    }
+
+    #[Route(
+        '/admin/habitaciones/nueva',
+        name: 'admin_habitacion_nueva',
+        methods: ['GET', 'POST']
+    )]
+    public function nuevaHabitacion(Request $request): Response
+    {
+        $habitacion = new Habitacion();
+        $habitacion->setActiva(true);
+
+        $formulario = $this->createForm(HabitacionType::class, $habitacion);
+        $formulario->handleRequest($request);
+
+        if ($formulario->isSubmitted() && $formulario->isValid()) {
+            if ($this->habitacionManager->existeNumero($habitacion)) {
+                $formulario->get('numero')->addError(
+                    new FormError('Ya existe una habitación con ese número.')
+                );
+            } else {
+                $this->habitacionManager->guardarHabitacion($habitacion);
+
+                $this->addFlash('success', 'Habitación creada correctamente.');
+
+                return $this->redirectToRoute('admin_habitaciones');
+            }
+        }
+
+        $respuesta = new Response();
+
+        if ($formulario->isSubmitted()) {
+            $respuesta->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return $this->render('admin/habitaciones/formulario.html.twig', [
+            'formulario' => $formulario->createView(),
+        ], $respuesta);
     }
 }

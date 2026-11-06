@@ -6,6 +6,10 @@
     <p class="crumbs">Administración / Habitaciones</p>
     <h1>Habitaciones</h1>
 
+<a href="{{ path('admin_habitacion_nueva') }}" class="btn dark">
+    Nueva habitación
+</a>
+
     {% for message in app.flashes('success') %}
         <p class="muted">{{ message }}</p>
     {% endfor %}
