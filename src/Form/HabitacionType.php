@@ -6,6 +6,7 @@ use App\Entity\Habitacion;
 use App\Enum\TipoHabitacion;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
@@ -46,7 +47,9 @@ class HabitacionType extends AbstractType
                 'label' => 'Capacidad máxima',
                 'constraints' => [
                     new NotBlank(message: 'Debe ingresar la capacidad.'),
-                    new Positive(message: 'La capacidad debe ser mayor que cero.'),
+                    new Positive(
+                        message: 'La capacidad máxima debe ser mayor que cero.'
+                    ),
                 ],
             ])
 
@@ -56,27 +59,39 @@ class HabitacionType extends AbstractType
                 'scale' => 2,
                 'constraints' => [
                     new NotBlank(message: 'Debe ingresar el precio.'),
-                    new Positive(message: 'El precio debe ser mayor que cero.'),
+                    new Positive(
+                        message: 'El precio por noche debe ser mayor que cero.'
+                    ),
+                ],
+            ])
+
+            ->add('estrellas', ChoiceType::class, [
+                'label' => 'Estrellas',
+                'placeholder' => 'Elegí 1 a 5',
+                'choices' => [
+                    '1' => 1,
+                    '2' => 2,
+                    '3' => 3,
+                    '4' => 4,
+                    '5' => 5,
+                ],
+                'invalid_message' => 'La cantidad de estrellas debe ser entre 1 y 5.',
+                'constraints' => [
+                    new NotNull(
+                        message: 'La cantidad de estrellas debe ser entre 1 y 5.'
+                    ),
+                    new Range(
+                        min: 1,
+                        max: 5,
+                        notInRangeMessage: 'La cantidad de estrellas debe ser entre 1 y 5.'
+                    ),
                 ],
             ])
 
             ->add('descripcion', TextareaType::class, [
                 'label' => 'Descripción',
-                'constraints' => [
-                    new NotBlank(message: 'Debe ingresar una descripción.'),
-                ],
-            ])
-
-            ->add('estrellas', IntegerType::class, [
-                'label' => 'Estrellas',
-                'constraints' => [
-                    new NotBlank(message: 'Debe ingresar las estrellas.'),
-                    new Range(
-                        min: 1,
-                        max: 5,
-                        notInRangeMessage: 'Las estrellas deben estar entre 1 y 5.'
-                    ),
-                ],
+                'required' => false,
+                'empty_data' => '',
             ])
 
             ->add('activa', CheckboxType::class, [

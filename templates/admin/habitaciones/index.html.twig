@@ -1,14 +1,15 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Administración de habitaciones{% endblock %}
-
 {% block body %}
-    <p class="crumbs">Administración / Habitaciones</p>
-    <h1>Habitaciones</h1>
+    <div class="crumbs">Admin › Habitaciones</div>
 
-    <a href="{{ path('admin_habitacion_nueva') }}" class="btn dark">
-        Nueva habitación
-    </a>
+    <div class="toolbar">
+        <h1>Habitaciones</h1>
+
+        <a href="{{ path('admin_habitacion_nueva') }}" class="btn dark">
+            + Nueva habitación
+        </a>
+    </div>
 
     {% for message in app.flashes('success') %}
         <p class="muted">{{ message }}</p>
@@ -21,12 +22,13 @@
                 <th>Número</th>
                 <th>Tipo</th>
                 <th>Capacidad</th>
-                <th>Precio por noche</th>
+                <th>Precio/noche</th>
                 <th>Estrellas</th>
                 <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
+
         <tbody>
             {% for habitacion in habitaciones %}
                 {% set portada = null %}
@@ -49,18 +51,33 @@
                             <span class="muted">Sin portada</span>
                         {% endif %}
                     </td>
-                    <td>{{ habitacion.numero }}</td>
+
+                    <td>
+                        <b>{{ habitacion.numero }}</b>
+                    </td>
+
                     <td>{{ habitacion.tipo.value }}</td>
+
                     <td>{{ habitacion.capacidadMaxima }}</td>
-                    <td>${{ habitacion.precioPorNoche|number_format(0, ',', '.') }}</td>
-                    <td>{{ habitacion.estrellas }} / 5</td>
+
+                    <td>
+                        ${{ habitacion.precioPorNoche|number_format(0, ',', '.') }}
+                    </td>
+
+                    <td class="stars" title="{{ habitacion.estrellas }} estrellas">
+                        {% if habitacion.estrellas > 0 %}
+                            {% for estrella in 1..habitacion.estrellas %}★{% endfor %}
+                        {% endif %}
+                    </td>
+
                     <td>
                         {% if habitacion.activa %}
                             <span class="badge">Activa</span>
                         {% else %}
-                            <span class="badge cancel">Inactiva</span>
+                            <span class="badge off">Inactiva</span>
                         {% endif %}
                     </td>
+
                     <td>
                         <a
                             href="{{ path('admin_habitacion_editar', {'id': habitacion.id}) }}"

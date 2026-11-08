@@ -1,0 +1,198 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="crumbs">Admin › Habitaciones › {{ titulo }}</div>
+
+    <h1>{{ titulo }}</h1>
+
+    {{ form_start(formulario, {
+        'attr': {
+            'class': 'form',
+            'novalidate': 'novalidate'
+        }
+    }) }}
+
+        {% if formulario.vars.errors|length > 0 %}
+            <div class="full">
+                {{ form_errors(formulario) }}
+            </div>
+        {% endif %}
+
+        <div>
+            <label for="{{ formulario.numero.vars.id }}">
+                Número <span class="req">*</span>
+            </label>
+            {{ form_errors(formulario.numero) }}
+            {{ form_widget(formulario.numero) }}
+        </div>
+
+        <div>
+            <label for="{{ formulario.tipo.vars.id }}">
+                Tipo <span class="req">*</span>
+            </label>
+            {{ form_errors(formulario.tipo) }}
+            {{ form_widget(formulario.tipo) }}
+        </div>
+
+        <div>
+            <label for="{{ formulario.capacidadMaxima.vars.id }}">
+                Capacidad máxima <span class="req">*</span>
+            </label>
+            {{ form_errors(formulario.capacidadMaxima) }}
+            {{ form_widget(formulario.capacidadMaxima) }}
+        </div>
+
+        <div>
+            <label for="{{ formulario.precioPorNoche.vars.id }}">
+                Precio por noche ($) <span class="req">*</span>
+            </label>
+            {{ form_errors(formulario.precioPorNoche) }}
+            {{ form_widget(formulario.precioPorNoche) }}
+        </div>
+
+        <div>
+            <label for="{{ formulario.estrellas.vars.id }}">
+                Estrellas <span class="req">*</span>
+            </label>
+            {{ form_errors(formulario.estrellas) }}
+            {{ form_widget(formulario.estrellas) }}
+        </div>
+
+        <div></div>
+
+        <div class="full">
+            {{ form_label(formulario.descripcion) }}
+            {{ form_errors(formulario.descripcion) }}
+            {{ form_widget(formulario.descripcion, {
+                'attr': {'rows': 3}
+            }) }}
+        </div>
+
+        <div class="full">
+            <label class="check" for="{{ formulario.activa.vars.id }}">
+                {{ form_widget(formulario.activa) }}
+                Activa
+            </label>
+            {{ form_errors(formulario.activa) }}
+        </div>
+
+        <div class="full imgsec">
+            <div class="row">
+                <h2>Imágenes</h2>
+            </div>
+
+            <details class="visor" open>
+                <summary class="btn">Elegir imágenes</summary>
+
+                <div class="visorpanel">
+                    <div class="row">
+                        <b>Imágenes disponibles · public/img/habitaciones/</b>
+                    </div>
+
+                    <div class="pickgrid">
+                        {% for archivo in imagenesDisponibles %}
+                            <label class="pick">
+                                <input
+                                    id="seleccion-{{ loop.index }}"
+                                    type="checkbox"
+                                    name="sel[]"
+                                    value="{{ archivo }}"
+                                    {% if archivo in seleccionadas %}
+                                        checked
+                                    {% endif %}
+                                >
+
+                                <img
+                                    src="{{ asset('img/habitaciones/' ~ archivo) }}"
+                                    alt="{{ archivo }}"
+                                >
+
+                                <span>{{ archivo }}</span>
+                            </label>
+                        {% else %}
+                            <p class="muted">No hay imágenes disponibles.</p>
+                        {% endfor %}
+                    </div>
+
+                    <p class="help">
+                        Marcá las imágenes y actualizá la selección para elegir la portada.
+                        Para quitar una imagen, desmarcala y actualizá la selección.
+                    </p>
+
+                    <button
+                        id="actualizar-imagenes"
+                        type="submit"
+                        name="accion"
+                        value="actualizar"
+                        class="btn"
+                    >
+                        Actualizar selección
+                    </button>
+                </div>
+            </details>
+
+            <h3>
+                Imágenes asignadas
+                <span class="muted">· marcá cuál es la portada</span>
+            </h3>
+
+            <div class="asggrid">
+                {% for archivo in imagenesDisponibles %}
+                    {% if archivo in seleccionadas %}
+                        <div class="asg">
+                            <img
+                                src="{{ asset('img/habitaciones/' ~ archivo) }}"
+                                alt="{{ archivo }}"
+                            >
+
+                            <label class="radio">
+                                <input
+                                    type="radio"
+                                    name="portada"
+                                    value="{{ archivo }}"
+                                    {% if archivo == portada %}
+                                        checked
+                                    {% endif %}
+                                >
+                                Portada
+                            </label>
+
+                            <a
+                                class="muted"
+                                href="#seleccion-{{ loop.index }}"
+                                title="Desasigna la imagen; el archivo no se borra"
+                                onclick="
+                                    document.getElementById('seleccion-{{ loop.index }}').checked = false;
+                                    document.getElementById('actualizar-imagenes').click();
+                                    return false;
+                                "
+                            >
+                                Quitar
+                            </a>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if seleccionadas|length == 0 %}
+                <p class="muted">Todavía no seleccionaste imágenes.</p>
+            {% endif %}
+        </div>
+
+        <div class="full">
+            <button
+                type="submit"
+                name="accion"
+                value="guardar"
+                class="btn dark"
+            >
+                Guardar
+            </button>
+
+            <a href="{{ path('admin_habitaciones') }}" class="btn">
+                Cancelar
+            </a>
+        </div>
+
+    {{ form_end(formulario) }}
+{% endblock %}

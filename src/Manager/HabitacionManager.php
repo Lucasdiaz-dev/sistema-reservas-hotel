@@ -83,30 +83,32 @@ class HabitacionManager
         return $imagenes;
     }
 
-    public function validarImagenes(array $seleccionadas, string $portada): ?string
-    {
-        if (count($seleccionadas) === 0) {
-            return 'Debe asignar al menos una imagen.';
+    public function filtrarImagenesSeleccionadas(array $seleccionadas): array
+{
+    $disponibles = $this->getImagenesDisponibles();
+    $imagenesValidas = [];
+
+    foreach ($seleccionadas as $archivo) {
+        if (in_array($archivo, $disponibles, true)) {
+            $imagenesValidas[] = $archivo;
         }
-
-        if ($portada === '') {
-            return 'Debe marcar una portada.';
-        }
-
-        if (!in_array($portada, $seleccionadas, true)) {
-            return 'La portada debe ser una de las imágenes seleccionadas.';
-        }
-
-        $disponibles = $this->getImagenesDisponibles();
-
-        foreach ($seleccionadas as $archivo) {
-            if (!in_array($archivo, $disponibles, true)) {
-                return 'Una de las imágenes seleccionadas no está disponible.';
-            }
-        }
-
-        return null;
     }
+
+    return array_values(array_unique($imagenesValidas));
+}
+
+public function validarImagenes(array $seleccionadas, string $portada): ?string
+{
+    if (count($seleccionadas) === 0) {
+        return 'Debe asignar al menos una imagen.';
+    }
+
+    if ($portada === '' || !in_array($portada, $seleccionadas, true)) {
+        return 'Debe marcar una portada.';
+    }
+
+    return null;
+}
 
     public function guardarNuevaHabitacionConImagenes(
         Habitacion $habitacion,
