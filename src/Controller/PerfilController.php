@@ -38,6 +38,6 @@ class PerfilController extends AbstractController
 
         return $this->render('perfil/index.html.twig', [
             'formulario' => $formulario->createView(),
-        ]);
+        ], new Response(null, $formulario->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 }

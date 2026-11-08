@@ -88,6 +88,6 @@ class UsuarioController extends AbstractController
             'usuarios' => $usuarios,
             'formularios' => $formularios,
             'usuarioEditado' => $usuarioEditado,
-        ]);
+        ], new Response(null, $formularioEditado !== null ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 }
