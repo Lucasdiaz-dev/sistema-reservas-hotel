@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Manager\ReservaManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -44,7 +45,7 @@ class ReservaController extends AbstractController
         } catch (\InvalidArgumentException $e) {
             $this->addFlash('success', $e->getMessage());
 
-            return $this->redirectToRoute('app_habitacion_detalle', $this->parametrosDeVuelta($habitacion->getId(), $request));
+            return $this->redirectToRoute('app_habitacion_detalle', $this->parametrosDeVuelta($habitacion->getId(), $request->query));
         }
 
         return $this->render('reserva/confirmar.html.twig', [
@@ -57,12 +58,77 @@ class ReservaController extends AbstractController
         ]);
     }
 
-    // El POST que registra la reserva (CU005) es el paso siguiente.
     #[Route('/habitacion/{id}/reservar', name: 'app_reserva_registrar', requirements: ['id' => '\d+'], methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function registrar(int $id): Response
+    public function registrar(int $id, Request $request): Response
     {
-        throw $this->createNotFoundException();
+        $token = $request->request->get('_token');
+        if (!\is_string($token) || !$this->isCsrfTokenValid('reserva'.$id, $token)) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $usuario = $this->getUser();
+        if (!$usuario instanceof User) {
+            throw $this->createAccessDeniedException();
+        }
+
+        try {
+            $habitacion = $this->reservaManager->obtenerHabitacionActiva($id);
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('success', $e->getMessage());
+
+            return $this->redirectToRoute('app_busqueda');
+        }
+
+        $ingreso = $this->fechaDeConsulta($request->request->get('ingreso'));
+        $egreso = $this->fechaDeConsulta($request->request->get('egreso'));
+        $huespedes = $request->request->get('huespedes');
+        $cantidad = is_numeric($huespedes) ? (int) $huespedes : 0;
+
+        try {
+            if ($ingreso === null || $egreso === null) {
+                throw new \InvalidArgumentException('La fecha de egreso debe ser posterior a la fecha de ingreso.');
+            }
+
+            $reserva = $this->reservaManager->registrar($habitacion, $usuario, $ingreso, $egreso, $cantidad);
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('success', $e->getMessage());
+
+            return $this->redirectToRoute('app_habitacion_detalle', $this->parametrosDeVuelta($habitacion->getId(), $request->request));
+        } catch (\Throwable) {
+            $this->addFlash('success', 'No se pudo registrar la reserva. Intentá de nuevo.');
+
+            return $this->redirectToRoute('app_reserva_confirmar', $this->parametrosDeVuelta($habitacion->getId(), $request->request));
+        }
+
+        return $this->redirectToRoute('app_reserva_pendiente', ['id' => $reserva->getId()]);
+    }
+
+    #[Route('/reservas/{id}/pendiente', name: 'app_reserva_pendiente', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function pendiente(int $id): Response
+    {
+        $reserva = $this->reservaManager->obtenerReserva($id);
+        $usuario = $this->getUser();
+
+        if ($reserva === null) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$usuario instanceof User || $reserva->getUsuario()?->getId() !== $usuario->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $this->render('reserva/pendiente.html.twig', [
+            'reserva' => $reserva,
+        ]);
+    }
+
+    // Mis reservas la arma Luciano. El nombre existe para el botón Entendido.
+    #[Route('/reservas', name: 'app_mis_reservas', methods: ['GET'])]
+    public function misReservas(): Response
+    {
+        return $this->redirectToRoute('app_busqueda');
     }
 
     private function fechaDeConsulta(mixed $valor): ?\DateTimeImmutable
@@ -83,12 +149,12 @@ class ReservaController extends AbstractController
     /**
      * @return array<string, int|string>
      */
-    private function parametrosDeVuelta(int $id, Request $request): array
+    private function parametrosDeVuelta(int $id, \Symfony\Component\HttpFoundation\ParameterBag $origen): array
     {
         $parametros = ['id' => $id];
 
         foreach (['ingreso', 'egreso', 'huespedes'] as $campo) {
-            $valor = $request->query->get($campo);
+            $valor = $origen->get($campo);
             if (\is_string($valor) && $valor !== '') {
                 $parametros[$campo] = $valor;
             }

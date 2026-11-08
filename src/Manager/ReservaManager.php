@@ -3,19 +3,25 @@
 namespace App\Manager;
 
 use App\Entity\Habitacion;
+use App\Entity\Reserva;
+use App\Entity\User;
+use App\Enum\EstadoReserva;
 use App\Enum\TipoHabitacion;
 use App\Repository\HabitacionRepository;
 use App\Repository\ReservaRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
 class ReservaManager
 {
     private HabitacionRepository $habitacionRepository;
     private ReservaRepository $reservaRepository;
+    private EntityManagerInterface $entityManager;
 
-    public function __construct(HabitacionRepository $habitacionRepository, ReservaRepository $reservaRepository)
+    public function __construct(HabitacionRepository $habitacionRepository, ReservaRepository $reservaRepository, EntityManagerInterface $entityManager)
     {
         $this->habitacionRepository = $habitacionRepository;
         $this->reservaRepository = $reservaRepository;
+        $this->entityManager = $entityManager;
     }
 
     /**
@@ -56,6 +62,33 @@ class ReservaManager
         }
 
         return $habitacion;
+    }
+
+    public function obtenerReserva(int $id): ?Reserva
+    {
+        return $this->reservaRepository->find($id);
+    }
+
+    /**
+     * Revalida y registra la reserva en PENDIENTE, con el total calculado en el servidor.
+     */
+    public function registrar(Habitacion $habitacion, User $usuario, \DateTimeImmutable $ingreso, \DateTimeImmutable $egreso, int $huespedes): Reserva
+    {
+        $this->validarParaReserva($habitacion, $ingreso, $egreso, $huespedes);
+
+        $reserva = (new Reserva())
+            ->setHabitacion($habitacion)
+            ->setUsuario($usuario)
+            ->setFechaIngreso($this->sinHora($ingreso))
+            ->setFechaEgreso($this->sinHora($egreso))
+            ->setCantidadHuespedes($huespedes)
+            ->setTotal($this->calcularTotal($habitacion, $ingreso, $egreso))
+            ->setEstado(EstadoReserva::PENDIENTE);
+
+        $this->entityManager->persist($reserva);
+        $this->entityManager->flush();
+
+        return $reserva;
     }
 
     /**
