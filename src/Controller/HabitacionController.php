@@ -43,17 +43,38 @@ class HabitacionController extends AbstractController
         $formulario = $this->createForm(HabitacionType::class, $habitacion);
         $formulario->handleRequest($request);
 
-        if ($formulario->isSubmitted() && $formulario->isValid()) {
-            if ($this->habitacionManager->existeNumero($habitacion)) {
-                $formulario->get('numero')->addError(
-                    new FormError('Ya existe una habitación con ese número.')
-                );
-            } else {
-                $this->habitacionManager->guardarHabitacion($habitacion);
+        $seleccionadas = [];
+        $portada = '';
 
-                $this->addFlash('success', 'Habitación creada correctamente.');
+        if ($formulario->isSubmitted()) {
+            $seleccionadas = $request->request->all('sel');
+            $portada = $request->request->get('portada', '');
 
-                return $this->redirectToRoute('admin_habitaciones');
+            $errorImagenes = $this->habitacionManager->validarImagenes(
+                $seleccionadas,
+                $portada
+            );
+
+            if ($errorImagenes !== null) {
+                $formulario->addError(new FormError($errorImagenes));
+            }
+
+            if ($formulario->isValid()) {
+                if ($this->habitacionManager->existeNumero($habitacion)) {
+                    $formulario->get('numero')->addError(
+                        new FormError('Ya existe una habitación con ese número.')
+                    );
+                } else {
+                    $this->habitacionManager->guardarNuevaHabitacionConImagenes(
+                        $habitacion,
+                        $seleccionadas,
+                        $portada
+                    );
+
+                    $this->addFlash('success', 'Habitación creada correctamente.');
+
+                    return $this->redirectToRoute('admin_habitaciones');
+                }
             }
         }
 
@@ -66,6 +87,10 @@ class HabitacionController extends AbstractController
         return $this->render('admin/habitaciones/formulario.html.twig', [
             'formulario' => $formulario->createView(),
             'titulo' => 'Nueva habitación',
+            'mostrarImagenes' => true,
+            'imagenesDisponibles' => $this->habitacionManager->getImagenesDisponibles(),
+            'seleccionadas' => $seleccionadas,
+            'portada' => $portada,
         ], $respuesta);
     }
 
@@ -109,6 +134,7 @@ class HabitacionController extends AbstractController
         return $this->render('admin/habitaciones/formulario.html.twig', [
             'formulario' => $formulario->createView(),
             'titulo' => 'Editar habitación',
+            'mostrarImagenes' => false,
         ], $respuesta);
     }
 }
