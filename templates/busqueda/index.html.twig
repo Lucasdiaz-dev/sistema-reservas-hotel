@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Buscar habitaciones · Hotel Litoral{% endblock %}
+
+{% block body %}
+<div class="crumbs">Inicio › Buscar</div>
+<div class="hero"><img src="{{ asset('img/hero-piscina.jpg') }}" alt=""><h1>Encontrá tu habitación en Santa Fe</h1></div>
+
+{{ form_start(formulario, {attr: {class: 'searchbar'}}) }}
+    <div>
+        {{ form_label(formulario.ingreso) }}
+        {{ form_widget(formulario.ingreso) }}
+    </div>
+    <div>
+        {{ form_label(formulario.egreso) }}
+        {{ form_widget(formulario.egreso) }}
+    </div>
+    <div>
+        {{ form_label(formulario.huespedes) }}
+        {{ form_widget(formulario.huespedes) }}
+    </div>
+    <button class="btn dark" type="submit">Buscar</button>
+{{ form_end(formulario, {render_rest: false}) }}
+
+{% if error %}
+    <p class="muted" style="margin-top:18px">{{ error }}</p>
+{% elseif habitaciones is not null %}
+    {% set consulta = {
+        busqueda: {
+            ingreso: ingreso|date('Y-m-d'),
+            egreso: egreso|date('Y-m-d'),
+            huespedes: huespedes
+        }
+    } %}
+    <div class="chips">
+        <a class="chip{{ tipo is null ? ' on' }}" href="{{ path('app_busqueda', consulta) }}">Todas</a>
+        <a class="chip{{ tipo == 'SIMPLE' ? ' on' }}" href="{{ path('app_busqueda', consulta|merge({tipo: 'SIMPLE'})) }}">Simple</a>
+        <a class="chip{{ tipo == 'DOBLE' ? ' on' }}" href="{{ path('app_busqueda', consulta|merge({tipo: 'DOBLE'})) }}">Doble</a>
+        <a class="chip{{ tipo == 'SUITE' ? ' on' }}" href="{{ path('app_busqueda', consulta|merge({tipo: 'SUITE'})) }}">Suite</a>
+    </div>
+    {% if habitaciones is empty %}
+        <p class="muted" style="margin-top:18px">No existen habitaciones disponibles en ese período.</p>
+    {% else %}
+        <p class="muted" style="margin-top:18px">{{ habitaciones|length }} habitaciones disponibles del {{ ingreso|date('d/m') }} al {{ egreso|date('d/m') }}</p>
+        <div class="grid">
+            {% for habitacion in habitaciones %}
+                {% set portada = null %}
+                {% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
+                {% for imagen in habitacion.imagenHabitacions %}
+                    {% if imagen.portada %}
+                        {% set portada = imagen %}
+                    {% endif %}
+                {% endfor %}
+                <article class="room">
+                    <div class="ph">
+                        {% if portada %}
+                            <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="Portada habitación {{ habitacion.numero }}">
+                        {% endif %}
+                        <span class="tag">Hasta {{ habitacion.capacidadMaxima }} huésp.</span>
+                    </div>
+                    <div class="body">
+                        <div class="row">
+                            <h3>Habitación {{ habitacion.numero }} · {{ tipoNombre[habitacion.tipo.value] }}</h3>
+                            <span class="stars" title="{{ habitacion.estrellas }} estrellas">{% for i in 1..habitacion.estrellas %}★{% endfor %}</span>
+                        </div>
+                        <p>{{ habitacion.descripcion }}</p>
+                        <div class="row">
+                            <span class="price"><b>${{ habitacion.precioPorNoche|number_format(0, ',', '.') }}</b> <span>/ noche</span></span>
+                            <a class="btn" href="{{ path('app_habitacion_detalle', {
+                                id: habitacion.id,
+                                ingreso: ingreso|date('Y-m-d'),
+                                egreso: egreso|date('Y-m-d'),
+                                huespedes: huespedes
+                            }) }}">Ver habitación</a>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

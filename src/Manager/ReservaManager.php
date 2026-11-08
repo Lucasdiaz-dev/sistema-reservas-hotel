@@ -3,6 +3,7 @@
 namespace App\Manager;
 
 use App\Entity\Habitacion;
+use App\Enum\TipoHabitacion;
 use App\Repository\HabitacionRepository;
 use App\Repository\ReservaRepository;
 
@@ -19,18 +20,42 @@ class ReservaManager
 
     /**
      * Habitaciones disponibles para la búsqueda pública (CU003).
+     * El tipo es el filtro opcional de los chips.
      *
      * @return Habitacion[]
      */
-    public function buscarDisponibles(\DateTimeImmutable $ingreso, \DateTimeImmutable $egreso, int $huespedes): array
+    public function buscarDisponibles(\DateTimeImmutable $ingreso, \DateTimeImmutable $egreso, int $huespedes, ?TipoHabitacion $tipo = null): array
     {
         $this->validarFechasBusqueda($ingreso, $egreso);
 
-        return $this->habitacionRepository->buscarDisponibles(
+        $habitaciones = $this->habitacionRepository->buscarDisponibles(
             $this->sinHora($ingreso),
             $this->sinHora($egreso),
             $huespedes
         );
+
+        if ($tipo === null) {
+            return $habitaciones;
+        }
+
+        return array_values(array_filter(
+            $habitaciones,
+            static fn (Habitacion $habitacion): bool => $habitacion->getTipo() === $tipo
+        ));
+    }
+
+    /**
+     * Tope del select de huéspedes: la mayor capacidad entre las habitaciones activas.
+     */
+    public function capacidadMaximaDeActivas(): int
+    {
+        $maxima = 1;
+
+        foreach ($this->habitacionRepository->findBy(['activa' => true]) as $habitacion) {
+            $maxima = max($maxima, (int) $habitacion->getCapacidadMaxima());
+        }
+
+        return $maxima;
     }
 
     /**
