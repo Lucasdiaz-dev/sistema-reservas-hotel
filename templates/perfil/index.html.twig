@@ -3,10 +3,21 @@
 {% block body %}
     <div class="crumbs">Inicio › Mi perfil</div>
     <h1>Mi perfil</h1>
-    <div class="form">
-        <div><label>Nombre <span class="req">*</span></label><input value="{{ usuario.nombre }}" readonly></div>
-        <div><label>Apellido <span class="req">*</span></label><input value="{{ usuario.apellido }}" readonly></div>
-        <div class="full"><label>Email <span class="req">*</span></label><input type="email" value="{{ usuario.email }}" readonly></div>
-        <div class="full"><label>Teléfono <span class="req">*</span></label><input type="tel" value="{{ usuario.telefono }}" readonly></div>
-    </div>
+    {% for mensaje in app.flashes('success') %}
+        <p class="muted">{{ mensaje }}</p>
+    {% endfor %}
+    {{ form_start(formulario, {'attr': {'class': 'form', 'novalidate': 'novalidate'}}) }}
+        <div class="full">{{ form_errors(formulario) }}</div>
+        {% for campo, etiqueta in {'nombre': 'Nombre', 'apellido': 'Apellido', 'email': 'Email', 'telefono': 'Teléfono'} %}
+            <div{% if campo in ['email', 'telefono'] %} class="full"{% endif %}>
+                <label for="{{ attribute(formulario, campo).vars.id }}">{{ etiqueta }} <span class="req">*</span></label>
+                {{ form_errors(attribute(formulario, campo)) }}
+                {{ form_widget(attribute(formulario, campo)) }}
+            </div>
+        {% endfor %}
+        <div class="full row">
+            <button class="btn dark" type="submit">Guardar cambios</button>
+            <a class="btn" href="{{ app.request.baseUrl }}/">Cancelar</a>
+        </div>
+    {{ form_end(formulario) }}
 {% endblock %}
