@@ -63,6 +63,30 @@ class ReservaManager
     }
 
     /**
+     * Reservas del cliente, separadas como en Mis reservas.
+     * Próximas: pendiente, confirmada y cancelación pendiente. Canceladas aparte.
+     *
+     * @return array{proximas: Reserva[], canceladas: Reserva[]}
+     */
+    public function listarDeUsuario(User $usuario): array
+    {
+        $reservas = $usuario->getReservas()->toArray();
+        usort($reservas, static fn (Reserva $a, Reserva $b): int => $a->getFechaIngreso() <=> $b->getFechaIngreso());
+
+        $proximas = [];
+        $canceladas = [];
+        foreach ($reservas as $reserva) {
+            if ($reserva->getEstado() === EstadoReserva::CANCELADA) {
+                $canceladas[] = $reserva;
+            } else {
+                $proximas[] = $reserva;
+            }
+        }
+
+        return ['proximas' => $proximas, 'canceladas' => $canceladas];
+    }
+
+    /**
      * El período del admin tiene que traer las dos fechas, y desde no puede pasar de hasta.
      */
     public function validarPeriodo(?\DateTimeImmutable $desde, ?\DateTimeImmutable $hasta): void

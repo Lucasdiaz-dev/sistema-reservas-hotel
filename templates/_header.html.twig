@@ -1,10 +1,11 @@
+{% set ruta = app.request.attributes.get('_route')|default('') %}
 <header class="top">
-  <a class="brand" href="/"><span class="logo">HL</span>Hotel Litoral</a>
+  <a class="brand" href="{{ path('app_busqueda') }}"><span class="logo">HL</span>Hotel Litoral</a>
   <nav class="pillnav">
     {% if is_granted('ROLE_ADMIN') %}
-      <a href="/admin/reservas">Reservas</a><a href="/admin/habitaciones">Habitaciones</a><a href="/admin/usuarios">Usuarios</a>
+      <a href="{{ path('admin_reservas') }}"{% if ruta starts with 'admin_reserva' %} class="on"{% endif %}>Reservas</a><a href="{{ path('admin_habitaciones') }}"{% if ruta starts with 'admin_habitacion' %} class="on"{% endif %}>Habitaciones</a><a href="{{ path('admin_usuarios') }}"{% if ruta starts with 'admin_usuario' %} class="on"{% endif %}>Usuarios</a>
     {% else %}
-      <a href="/">Buscar</a><a href="/reservas">Mis reservas</a><a href="/perfil">Mi perfil</a>
+      <a href="{{ path('app_busqueda') }}"{% if ruta == 'app_busqueda' %} class="on"{% endif %}>Buscar</a><a href="{{ path('app_mis_reservas') }}"{% if ruta == 'app_mis_reservas' %} class="on"{% endif %}>Mis reservas</a><a href="{{ path('app_perfil') }}"{% if ruta == 'app_perfil' %} class="on"{% endif %}>Mi perfil</a>
     {% endif %}
   </nav>
   <div class="user">

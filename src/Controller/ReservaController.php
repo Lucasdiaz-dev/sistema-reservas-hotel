@@ -161,11 +161,21 @@ class ReservaController extends AbstractController
         return $this->redirectToRoute('app_mis_reservas');
     }
 
-    // Mis reservas la arma Luciano. El nombre existe para el botón Entendido.
     #[Route('/reservas', name: 'app_mis_reservas', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function misReservas(): Response
     {
-        return $this->redirectToRoute('app_busqueda');
+        $usuario = $this->getUser();
+        if (!$usuario instanceof User) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $grupos = $this->reservaManager->listarDeUsuario($usuario);
+
+        return $this->render('mis_reservas/index.html.twig', [
+            'proximas' => $grupos['proximas'],
+            'canceladas' => $grupos['canceladas'],
+        ]);
     }
 
     private function fechaDeConsulta(mixed $valor): ?\DateTimeImmutable
