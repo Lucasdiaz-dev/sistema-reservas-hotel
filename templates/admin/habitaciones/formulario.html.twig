@@ -1,10 +1,10 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Nueva habitación{% endblock %}
+{% block title %}{{ titulo }}{% endblock %}
 
 {% block body %}
-    <p class="crumbs">Administración / Habitaciones / Nueva</p>
-    <h1>Nueva habitación</h1>
+    <p class="crumbs">Administración / Habitaciones / {{ titulo }}</p>
+    <h1>{{ titulo }}</h1>
 
     <div class="panel">
         {{ form_start(formulario, {'attr': {'novalidate': 'novalidate'}}) }}

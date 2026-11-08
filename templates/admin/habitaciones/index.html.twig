@@ -6,9 +6,9 @@
     <p class="crumbs">Administración / Habitaciones</p>
     <h1>Habitaciones</h1>
 
-<a href="{{ path('admin_habitacion_nueva') }}" class="btn dark">
-    Nueva habitación
-</a>
+    <a href="{{ path('admin_habitacion_nueva') }}" class="btn dark">
+        Nueva habitación
+    </a>
 
     {% for message in app.flashes('success') %}
         <p class="muted">{{ message }}</p>
@@ -62,9 +62,12 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button class="btn" type="button" disabled>
+                        <a
+                            href="{{ path('admin_habitacion_editar', {'id': habitacion.id}) }}"
+                            class="btn"
+                        >
                             Editar
-                        </button>
+                        </a>
                     </td>
                 </tr>
             {% else %}

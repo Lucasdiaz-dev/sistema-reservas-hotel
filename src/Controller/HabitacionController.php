@@ -65,6 +65,50 @@ class HabitacionController extends AbstractController
 
         return $this->render('admin/habitaciones/formulario.html.twig', [
             'formulario' => $formulario->createView(),
+            'titulo' => 'Nueva habitación',
+        ], $respuesta);
+    }
+
+    #[Route(
+        '/admin/habitaciones/{id}/editar',
+        name: 'admin_habitacion_editar',
+        requirements: ['id' => '\d+'],
+        methods: ['GET', 'POST']
+    )]
+    public function editarHabitacion(int $id, Request $request): Response
+    {
+        $habitacion = $this->habitacionManager->getHabitacion($id);
+
+        if ($habitacion === null) {
+            throw $this->createNotFoundException('La habitación no existe.');
+        }
+
+        $formulario = $this->createForm(HabitacionType::class, $habitacion);
+        $formulario->handleRequest($request);
+
+        if ($formulario->isSubmitted() && $formulario->isValid()) {
+            if ($this->habitacionManager->existeNumero($habitacion)) {
+                $formulario->get('numero')->addError(
+                    new FormError('Ya existe una habitación con ese número.')
+                );
+            } else {
+                $this->habitacionManager->guardarHabitacion($habitacion);
+
+                $this->addFlash('success', 'Habitación modificada correctamente.');
+
+                return $this->redirectToRoute('admin_habitaciones');
+            }
+        }
+
+        $respuesta = new Response();
+
+        if ($formulario->isSubmitted()) {
+            $respuesta->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return $this->render('admin/habitaciones/formulario.html.twig', [
+            'formulario' => $formulario->createView(),
+            'titulo' => 'Editar habitación',
         ], $respuesta);
     }
 }
