@@ -70,23 +70,22 @@ class ReservaController extends AbstractController
         return $this->cambiarEstado($id, $request, fn ($reserva) => $this->reservaManager->rechazar($reserva));
     }
 
-    // Confirmar, revertir y cancelar (CU015, CU016) vienen después.
     #[Route('/admin/reservas/{id}/confirmar-cancelacion', name: 'admin_reserva_confirmar_cancelacion', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function confirmarCancelacion(int $id): Response
+    public function confirmarCancelacion(int $id, Request $request): Response
     {
-        throw $this->createNotFoundException();
+        return $this->cambiarEstado($id, $request, fn ($reserva) => $this->reservaManager->confirmarCancelacion($reserva));
     }
 
     #[Route('/admin/reservas/{id}/revertir-cancelacion', name: 'admin_reserva_revertir_cancelacion', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function revertirCancelacion(int $id): Response
+    public function revertirCancelacion(int $id, Request $request): Response
     {
-        throw $this->createNotFoundException();
+        return $this->cambiarEstado($id, $request, fn ($reserva) => $this->reservaManager->revertirCancelacion($reserva));
     }
 
     #[Route('/admin/reservas/{id}/cancelar', name: 'admin_reserva_cancelar', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function cancelar(int $id): Response
+    public function cancelar(int $id, Request $request): Response
     {
-        throw $this->createNotFoundException();
+        return $this->cambiarEstado($id, $request, fn ($reserva) => $this->reservaManager->cancelarPorAdmin($reserva));
     }
 
     private function cambiarEstado(int $id, Request $request, callable $transicion): Response

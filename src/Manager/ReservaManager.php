@@ -182,6 +182,45 @@ class ReservaManager
     }
 
     /**
+     * El admin confirma la cancelación que pidió el cliente: queda cancelada (CU015).
+     */
+    public function confirmarCancelacion(Reserva $reserva): string
+    {
+        $this->exigirCancelacionPendiente($reserva);
+        $reserva->setEstado(EstadoReserva::CANCELADA);
+        $this->entityManager->flush();
+
+        return 'La cancelación de la reserva #'.$reserva->getId().' fue confirmada.';
+    }
+
+    /**
+     * El cliente desistió: la cancelación pendiente vuelve a confirmada (CU015).
+     */
+    public function revertirCancelacion(Reserva $reserva): string
+    {
+        $this->exigirCancelacionPendiente($reserva);
+        $reserva->setEstado(EstadoReserva::CONFIRMADA);
+        $this->entityManager->flush();
+
+        return 'La cancelación de la reserva #'.$reserva->getId().' fue revertida.';
+    }
+
+    /**
+     * El admin cancela una confirmada por un inconveniente del hotel, sin la regla de 24 h (CU016).
+     */
+    public function cancelarPorAdmin(Reserva $reserva): string
+    {
+        if ($reserva->getEstado() !== EstadoReserva::CONFIRMADA) {
+            throw new \InvalidArgumentException('La reserva no se encuentra confirmada.');
+        }
+
+        $reserva->setEstado(EstadoReserva::CANCELADA);
+        $this->entityManager->flush();
+
+        return 'La reserva #'.$reserva->getId().' fue cancelada.';
+    }
+
+    /**
      * Tope del select de huéspedes: la mayor capacidad entre las habitaciones activas.
      */
     public function capacidadMaximaDeActivas(): int
@@ -258,6 +297,13 @@ class ReservaManager
     {
         if ($reserva->getEstado() !== EstadoReserva::PENDIENTE) {
             throw new \InvalidArgumentException('La reserva ya no se encuentra pendiente.');
+        }
+    }
+
+    private function exigirCancelacionPendiente(Reserva $reserva): void
+    {
+        if ($reserva->getEstado() !== EstadoReserva::CANCELACION_PENDIENTE) {
+            throw new \InvalidArgumentException('La reserva no tiene una cancelación pendiente.');
         }
     }
 
