@@ -1,0 +1,97 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="crumbs">Admin › Habitaciones</div>
+
+    <div class="toolbar">
+        <h1>Habitaciones</h1>
+
+        <a href="{{ path('admin_habitacion_nueva') }}" class="btn dark">
+            + Nueva habitación
+        </a>
+    </div>
+
+    {% for message in app.flashes('success') %}
+        <p class="muted">{{ message }}</p>
+    {% endfor %}
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Portada</th>
+                <th>Número</th>
+                <th>Tipo</th>
+                <th>Capacidad</th>
+                <th>Precio/noche</th>
+                <th>Estrellas</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for habitacion in habitaciones %}
+                {% set portada = null %}
+
+                {% for imagen in habitacion.imagenHabitacions %}
+                    {% if imagen.portada %}
+                        {% set portada = imagen %}
+                    {% endif %}
+                {% endfor %}
+
+                <tr>
+                    <td>
+                        {% if portada %}
+                            <img
+                                class="thumb"
+                                src="{{ asset('img/habitaciones/' ~ portada.ruta) }}"
+                                alt="Portada de la habitación {{ habitacion.numero }}"
+                            >
+                        {% else %}
+                            <span class="muted">Sin portada</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <b>{{ habitacion.numero }}</b>
+                    </td>
+
+                    <td>{{ habitacion.tipo.value }}</td>
+
+                    <td>{{ habitacion.capacidadMaxima }}</td>
+
+                    <td>
+                        ${{ habitacion.precioPorNoche|number_format(0, ',', '.') }}
+                    </td>
+
+                    <td class="stars" title="{{ habitacion.estrellas }} estrellas">
+                        {% if habitacion.estrellas > 0 %}
+                            {% for estrella in 1..habitacion.estrellas %}★{% endfor %}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if habitacion.activa %}
+                            <span class="badge">Activa</span>
+                        {% else %}
+                            <span class="badge off">Inactiva</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <a
+                            href="{{ path('admin_habitacion_editar', {'id': habitacion.id}) }}"
+                            class="btn"
+                        >
+                            Editar
+                        </a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="8">No hay habitaciones registradas.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
