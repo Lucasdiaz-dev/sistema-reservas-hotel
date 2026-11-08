@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="crumbs">Inicio › Mis reservas</div>
+    <h1 class="tripsh">Mis reservas</h1>
+    {% for reserva in reservas %}
+        <p>Reserva #{{ reserva.id }} · Habitación {{ reserva.habitacion.numero }} · {{ reserva.estado.value }}</p>
+    {% else %}
+        <p class="muted">No tenés reservas registradas.</p>
+    {% endfor %}
+{% endblock %}
