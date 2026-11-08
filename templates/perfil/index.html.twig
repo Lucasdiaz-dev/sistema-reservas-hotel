@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="crumbs">Inicio › Mi perfil</div>
+    <h1>Mi perfil</h1>
+    <div class="form">
+        <div><label>Nombre <span class="req">*</span></label><input value="{{ usuario.nombre }}" readonly></div>
+        <div><label>Apellido <span class="req">*</span></label><input value="{{ usuario.apellido }}" readonly></div>
+        <div class="full"><label>Email <span class="req">*</span></label><input type="email" value="{{ usuario.email }}" readonly></div>
+        <div class="full"><label>Teléfono <span class="req">*</span></label><input type="tel" value="{{ usuario.telefono }}" readonly></div>
+    </div>
+{% endblock %}
