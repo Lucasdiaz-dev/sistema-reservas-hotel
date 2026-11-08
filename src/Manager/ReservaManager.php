@@ -51,6 +51,28 @@ class ReservaManager
     }
 
     /**
+     * Reservas del panel, para el período pedido (CU008).
+     *
+     * @return Reserva[]
+     */
+    public function buscarPorPeriodo(\DateTimeImmutable $desde, \DateTimeImmutable $hasta): array
+    {
+        $this->validarPeriodo($desde, $hasta);
+
+        return $this->reservaRepository->buscarPorPeriodo($this->sinHora($desde), $this->sinHora($hasta));
+    }
+
+    /**
+     * El período del admin tiene que traer las dos fechas, y desde no puede pasar de hasta.
+     */
+    public function validarPeriodo(?\DateTimeImmutable $desde, ?\DateTimeImmutable $hasta): void
+    {
+        if ($desde === null || $hasta === null || $this->sinHora($desde) > $this->sinHora($hasta)) {
+            throw new \InvalidArgumentException('La fecha desde no puede ser posterior a la fecha hasta.');
+        }
+    }
+
+    /**
      * La ficha pública solo muestra una habitación activa (CU004).
      */
     public function obtenerHabitacionActiva(int $id): Habitacion

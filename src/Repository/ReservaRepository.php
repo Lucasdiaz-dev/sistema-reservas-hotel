@@ -39,4 +39,25 @@ class ReservaRepository extends ServiceEntityRepository
 
         return (int) $cantidad > 0;
     }
+
+    /**
+     * Reservas cuyo período se cruza con el filtro del admin (CU008).
+     * La estadía ocupa [ingreso, egreso); el filtro incluye desde y hasta.
+     *
+     * @return Reserva[]
+     */
+    public function buscarPorPeriodo(\DateTimeImmutable $desde, \DateTimeImmutable $hasta): array
+    {
+        return $this->createQueryBuilder('r')
+            ->addSelect('u', 'h')
+            ->join('r.usuario', 'u')
+            ->join('r.habitacion', 'h')
+            ->andWhere('r.fechaIngreso <= :hasta')
+            ->andWhere('r.fechaEgreso > :desde')
+            ->setParameter('desde', $desde)
+            ->setParameter('hasta', $hasta)
+            ->orderBy('r.fechaIngreso', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
