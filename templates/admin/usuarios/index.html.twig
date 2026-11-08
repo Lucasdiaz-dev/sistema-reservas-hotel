@@ -25,7 +25,30 @@
                             <span class="badge role">CLIENTE</span>
                         {% endif %}
                     </td>
-                    <td></td>
+                    <td>
+                        {% set formulario = formularios[usuario.id] %}
+                        <details class="confirm"{% if usuarioEditado == usuario.id %} open{% endif %}>
+                            <summary class="btn">Editar</summary>
+                            <div class="confirmbox">
+                                {{ form_start(formulario, {'attr': {'class': 'form', 'novalidate': 'novalidate'}}) }}
+                                    {% if formulario.vars.errors|length %}
+                                        <div class="full">{{ form_errors(formulario) }}</div>
+                                    {% endif %}
+                                    {% for campo, etiqueta in {'nombre': 'Nombre', 'apellido': 'Apellido', 'email': 'Email', 'telefono': 'Teléfono', 'rol': 'Rol'} %}
+                                        <div{% if campo in ['email', 'telefono', 'rol'] %} class="full"{% endif %}>
+                                            {{ form_label(attribute(formulario, campo), etiqueta) }}
+                                            {{ form_errors(attribute(formulario, campo)) }}
+                                            {{ form_widget(attribute(formulario, campo)) }}
+                                        </div>
+                                    {% endfor %}
+                                    <div class="full row">
+                                        <a class="btn" href="{{ path('admin_usuarios') }}">Cancelar</a>
+                                        <button class="btn dark" type="submit">Guardar</button>
+                                    </div>
+                                {{ form_end(formulario) }}
+                            </div>
+                        </details>
+                    </td>
                 </tr>
             {% else %}
                 <tr><td colspan="6">No hay usuarios registrados.</td></tr>
