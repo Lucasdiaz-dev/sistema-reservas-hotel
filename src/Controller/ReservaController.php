@@ -124,6 +124,43 @@ class ReservaController extends AbstractController
         ]);
     }
 
+    #[Route('/reservas/{id}/cancelar', name: 'app_reserva_cancelar', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function cancelar(int $id, Request $request): Response
+    {
+        $token = $request->request->get('_token');
+        if (!\is_string($token) || !$this->isCsrfTokenValid('reserva'.$id, $token)) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $reserva = $this->reservaManager->obtenerReserva($id);
+        $usuario = $this->getUser();
+
+        if ($reserva === null) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$usuario instanceof User || $reserva->getUsuario()?->getId() !== $usuario->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        try {
+            $mensaje = $this->reservaManager->cancelarPorCliente($reserva);
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('success', $e->getMessage());
+
+            return $this->redirectToRoute('app_mis_reservas');
+        } catch (\Throwable) {
+            $this->addFlash('success', 'No se pudo actualizar la reserva.');
+
+            return $this->redirectToRoute('app_mis_reservas');
+        }
+
+        $this->addFlash('success', $mensaje);
+
+        return $this->redirectToRoute('app_mis_reservas');
+    }
+
     // Mis reservas la arma Luciano. El nombre existe para el botón Entendido.
     #[Route('/reservas', name: 'app_mis_reservas', methods: ['GET'])]
     public function misReservas(): Response

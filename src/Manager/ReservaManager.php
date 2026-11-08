@@ -92,6 +92,50 @@ class ReservaManager
     }
 
     /**
+     * El cliente puede cancelar la suya si está PENDIENTE o CONFIRMADA y todavía entra en el plazo.
+     */
+    public function puedeCancelarCliente(Reserva $reserva, User $usuario): bool
+    {
+        if ($reserva->getUsuario()?->getId() !== $usuario->getId()) {
+            return false;
+        }
+
+        if (!$this->esCancelablePorCliente($reserva)) {
+            return false;
+        }
+
+        return $this->dentroDelPlazoDeCancelacion($reserva);
+    }
+
+    /**
+     * PENDIENTE pasa a CANCELADA. CONFIRMADA pasa a CANCELACION_PENDIENTE.
+     */
+    public function cancelarPorCliente(Reserva $reserva): string
+    {
+        if (!$this->esCancelablePorCliente($reserva)) {
+            throw new \InvalidArgumentException('La reserva no puede cancelarse.');
+        }
+
+        if (!$this->dentroDelPlazoDeCancelacion($reserva)) {
+            throw new \InvalidArgumentException('El plazo de cancelación venció.');
+        }
+
+        $mensaje = $reserva->getEstado() === EstadoReserva::PENDIENTE
+            ? 'La reserva #'.$reserva->getId().' fue cancelada.'
+            : 'Tu cancelación quedó pendiente de confirmación del hotel.';
+
+        $reserva->setEstado(
+            $reserva->getEstado() === EstadoReserva::PENDIENTE
+                ? EstadoReserva::CANCELADA
+                : EstadoReserva::CANCELACION_PENDIENTE
+        );
+
+        $this->entityManager->flush();
+
+        return $mensaje;
+    }
+
+    /**
      * Tope del select de huéspedes: la mayor capacidad entre las habitaciones activas.
      */
     public function capacidadMaximaDeActivas(): int
@@ -162,6 +206,27 @@ class ReservaManager
         $noches = (string) $ingreso->diff($egreso)->days;
 
         return bcmul($noches, (string) $habitacion->getPrecioPorNoche(), 2);
+    }
+
+    private function esCancelablePorCliente(Reserva $reserva): bool
+    {
+        return $reserva->getEstado() === EstadoReserva::PENDIENTE
+            || $reserva->getEstado() === EstadoReserva::CONFIRMADA;
+    }
+
+    /**
+     * Hasta 24 h antes del check-in (ingreso a las 14:00).
+     */
+    private function dentroDelPlazoDeCancelacion(Reserva $reserva): bool
+    {
+        $ingreso = $reserva->getFechaIngreso();
+        if ($ingreso === null) {
+            return false;
+        }
+
+        $limite = $ingreso->setTime(14, 0)->modify('-24 hours');
+
+        return new \DateTimeImmutable() < $limite;
     }
 
     private function sinHora(\DateTimeImmutable $fecha): \DateTimeImmutable
