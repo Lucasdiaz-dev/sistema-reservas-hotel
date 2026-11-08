@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Confirmar reserva · Hotel Litoral{% endblock %}
+
+{% block body %}
+{% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
+{% set dias = {Mon: 'lun', Tue: 'mar', Wed: 'mié', Thu: 'jue', Fri: 'vie', Sat: 'sáb', Sun: 'dom'} %}
+{% set portada = null %}
+{% for imagen in habitacion.imagenHabitacions %}
+    {% if imagen.portada and portada is null %}
+        {% set portada = imagen %}
+    {% endif %}
+{% endfor %}
+{% set precio = habitacion.precioPorNoche|number_format(0, ',', '.') %}
+{% set nochesTexto = noches == 1 ? 'noche' : 'noches' %}
+
+<div class="crumbs">Inicio › Habitación {{ habitacion.numero }} › Confirmar</div>
+<h1>Confirmar reserva</h1>
+<div class="detail">
+    <div class="panel">
+        <div class="row" style="justify-content:flex-start;gap:16px">
+            {% if portada %}
+                <img class="thumb" src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="" style="width:96px;height:72px">
+            {% endif %}
+            <div>
+                <h2 style="margin:0">Habitación {{ habitacion.numero }} · {{ tipoNombre[habitacion.tipo.value] }}</h2>
+                <p class="muted">Capacidad máxima {{ habitacion.capacidadMaxima }} · {{ huespedes }} {{ huespedes == 1 ? 'huésped' : 'huéspedes' }}</p>
+            </div>
+        </div>
+        <div class="tiles" style="margin-top:18px">
+            <div class="tile"><small>Ingreso</small><b>{{ ingreso|date('d/m') }}</b>{{ dias[ingreso|date('D')] }} {{ ingreso|date('Y') }}</div>
+            <div class="tile"><small>Egreso</small><b>{{ egreso|date('d/m') }}</b>{{ dias[egreso|date('D')] }} {{ egreso|date('Y') }}</div>
+            <div class="tile"><small>Noches</small><b>{{ noches }}</b>estadía</div>
+        </div>
+        <div class="note">Titular: {{ app.user.nombre }} {{ app.user.apellido }} · {{ app.user.email }} · {{ app.user.telefono }}</div>
+    </div>
+    <div class="darkcard">
+        <h2 style="margin-top:0">Resumen</h2>
+        <div class="sum" style="border-color:#33333b">
+            <div class="row"><span class="muted">Precio por noche</span><span>${{ precio }}</span></div>
+            <div class="row"><span class="muted">Noches</span><span>{{ noches }}</span></div>
+            <div class="row"><span class="muted">Huéspedes</span><span>{{ huespedes }}</span></div>
+            <div class="row"><span class="muted">{{ noches }} {{ nochesTexto }} × ${{ precio }}</span><span>${{ total|number_format(0, ',', '.') }}</span></div>
+            <div class="row" style="font-size:18px"><b>Total</b><b>${{ total|number_format(0, ',', '.') }}</b></div>
+        </div>
+        <p class="muted" style="font-size:12px;margin-top:8px">La reserva queda Pendiente hasta que el hotel se comunique con vos para coordinar el pago. El total queda fijado al confirmar: si después cambia el precio de la habitación, tu reserva no se modifica.</p>
+        <form method="post" action="{{ path('app_reserva_registrar', {id: habitacion.id}) }}">
+            <input type="hidden" name="ingreso" value="{{ ingreso|date('Y-m-d') }}">
+            <input type="hidden" name="egreso" value="{{ egreso|date('Y-m-d') }}">
+            <input type="hidden" name="huespedes" value="{{ huespedes }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ habitacion.id) }}">
+            <button class="btn block" style="margin-top:16px" type="submit">Confirmar reserva</button>
+        </form>
+        <a class="btn block" style="margin-top:8px;background:transparent;color:#fff;border-color:#33333b" href="{{ path('app_habitacion_detalle', {id: habitacion.id, ingreso: ingreso|date('Y-m-d'), egreso: egreso|date('Y-m-d'), huespedes: huespedes}) }}">Volver</a>
+    </div>
+</div>
+{% endblock %}
