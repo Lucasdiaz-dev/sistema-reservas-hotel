@@ -2,7 +2,9 @@
 
 namespace App\Repository;
 
+use App\Entity\Habitacion;
 use App\Entity\Reserva;
+use App\Enum\EstadoReserva;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,28 +18,25 @@ class ReservaRepository extends ServiceEntityRepository
         parent::__construct($registry, Reserva::class);
     }
 
-    //    /**
-    //     * @return Reserva[] Returns an array of Reserva objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('r.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Hay una reserva que bloquea esta habitación en el período (CU005 RN03).
+     * Misma superposición que la búsqueda: el día de egreso puede ser ingreso de otra.
+     */
+    public function existeSuperpuesta(Habitacion $habitacion, \DateTimeImmutable $ingreso, \DateTimeImmutable $egreso): bool
+    {
+        $cantidad = $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->andWhere('r.habitacion = :habitacion')
+            ->andWhere('r.estado != :cancelada')
+            ->andWhere('r.fechaIngreso < :egreso')
+            ->andWhere('r.fechaEgreso > :ingreso')
+            ->setParameter('habitacion', $habitacion)
+            ->setParameter('cancelada', EstadoReserva::CANCELADA)
+            ->setParameter('ingreso', $ingreso)
+            ->setParameter('egreso', $egreso)
+            ->getQuery()
+            ->getSingleScalarResult();
 
-    //    public function findOneBySomeField($value): ?Reserva
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        return (int) $cantidad > 0;
+    }
 }
