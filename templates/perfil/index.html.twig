@@ -15,6 +15,22 @@
                 {{ form_widget(attribute(formulario, campo)) }}
             </div>
         {% endfor %}
+        <details class="full panel"{% if formulario.nuevaContrasena.vars.errors|length or formulario.nuevaContrasena.first.vars.errors|length or formulario.nuevaContrasena.second.vars.errors|length %} open{% endif %}>
+            <summary><b>Cambiar contraseña (opcional)</b></summary>
+            {{ form_errors(formulario.nuevaContrasena) }}
+            <div class="form">
+                <div>
+                    {{ form_label(formulario.nuevaContrasena.first) }}
+                    {{ form_errors(formulario.nuevaContrasena.first) }}
+                    {{ form_widget(formulario.nuevaContrasena.first) }}
+                </div>
+                <div>
+                    {{ form_label(formulario.nuevaContrasena.second) }}
+                    {{ form_errors(formulario.nuevaContrasena.second) }}
+                    {{ form_widget(formulario.nuevaContrasena.second) }}
+                </div>
+            </div>
+        </details>
         <div class="full row">
             <button class="btn dark" type="submit">Guardar cambios</button>
             <a class="btn" href="{{ app.request.baseUrl }}/">Cancelar</a>

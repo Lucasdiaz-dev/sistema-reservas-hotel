@@ -8,6 +8,8 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TelType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -44,7 +46,16 @@ class PerfilType extends AbstractType
                     }, groups: ['perfil']),
                 ],
             ])
-            ->add('telefono', TelType::class, ['empty_data' => '', 'constraints' => [$obligatorio, $longitud]]);
+            ->add('telefono', TelType::class, ['empty_data' => '', 'constraints' => [$obligatorio, $longitud]])
+            ->add('nuevaContrasena', RepeatedType::class, [
+                'type' => PasswordType::class,
+                'mapped' => false,
+                'required' => false,
+                'invalid_message' => 'Las contraseñas no coinciden.',
+                'first_options' => ['label' => 'Nueva contraseña', 'attr' => ['autocomplete' => 'new-password']],
+                'second_options' => ['label' => 'Repetir nueva contraseña', 'attr' => ['autocomplete' => 'new-password']],
+                'constraints' => [new Assert\Length(max: 4096, groups: ['perfil'])],
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

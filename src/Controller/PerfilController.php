@@ -30,7 +30,7 @@ class PerfilController extends AbstractController
         $formulario->handleRequest($request);
 
         if ($formulario->isSubmitted() && $formulario->isValid()) {
-            $this->perfilManager->guardarPerfil($usuario, $datos);
+            $this->perfilManager->guardarPerfil($usuario, $datos, $formulario->get('nuevaContrasena')->getData());
             $this->addFlash('success', 'Tu perfil fue actualizado correctamente.');
 
             return $this->redirectToRoute('app_perfil');
