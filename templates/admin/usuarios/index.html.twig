@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="crumbs">Admin › Usuarios</div>
+    <div class="toolbar"><h1>Usuarios</h1></div>
+    {% for mensaje in app.flashes('success') %}
+        <p class="muted">{{ mensaje }}</p>
+    {% endfor %}
+    {% for mensaje in app.flashes('error') %}
+        <p class="muted">{{ mensaje }}</p>
+    {% endfor %}
+    <table class="table">
+        <thead><tr><th>Nombre</th><th>Apellido</th><th>Email</th><th>Teléfono</th><th>Rol</th><th>Editar</th></tr></thead>
+        <tbody>
+            {% for usuario in usuarios %}
+                <tr>
+                    <td>{{ usuario.nombre }}</td>
+                    <td>{{ usuario.apellido }}</td>
+                    <td>{{ usuario.email }}</td>
+                    <td>{{ usuario.telefono }}</td>
+                    <td>
+                        {% if 'ROLE_ADMIN' in usuario.roles %}
+                            <span class="badge role adm">ADMINISTRADOR</span>
+                        {% else %}
+                            <span class="badge role">CLIENTE</span>
+                        {% endif %}
+                    </td>
+                    <td></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6">No hay usuarios registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
