@@ -108,20 +108,52 @@ class HabitacionController extends AbstractController
             throw $this->createNotFoundException('La habitación no existe.');
         }
 
+        $seleccionadas = [];
+        $portada = '';
+
+        foreach ($habitacion->getImagenHabitacions() as $imagen) {
+            $seleccionadas[] = $imagen->getRuta();
+
+            if ($imagen->isPortada()) {
+                $portada = $imagen->getRuta();
+            }
+        }
+
         $formulario = $this->createForm(HabitacionType::class, $habitacion);
         $formulario->handleRequest($request);
 
-        if ($formulario->isSubmitted() && $formulario->isValid()) {
-            if ($this->habitacionManager->existeNumero($habitacion)) {
-                $formulario->get('numero')->addError(
-                    new FormError('Ya existe una habitación con ese número.')
-                );
-            } else {
-                $this->habitacionManager->guardarHabitacion($habitacion);
+        if ($formulario->isSubmitted()) {
+            $seleccionadas = $request->request->all('sel');
+            $portada = $request->request->get('portada', '');
 
-                $this->addFlash('success', 'Habitación modificada correctamente.');
+            $errorImagenes = $this->habitacionManager->validarImagenes(
+                $seleccionadas,
+                $portada
+            );
 
-                return $this->redirectToRoute('admin_habitaciones');
+            if ($errorImagenes !== null) {
+                $formulario->addError(new FormError($errorImagenes));
+            }
+
+            if ($formulario->isValid()) {
+                if ($this->habitacionManager->existeNumero($habitacion)) {
+                    $formulario->get('numero')->addError(
+                        new FormError('Ya existe una habitación con ese número.')
+                    );
+                } else {
+                    $this->habitacionManager->actualizarHabitacionConImagenes(
+                        $habitacion,
+                        $seleccionadas,
+                        $portada
+                    );
+
+                    $this->addFlash(
+                        'success',
+                        'Habitación modificada correctamente.'
+                    );
+
+                    return $this->redirectToRoute('admin_habitaciones');
+                }
             }
         }
 
@@ -134,7 +166,10 @@ class HabitacionController extends AbstractController
         return $this->render('admin/habitaciones/formulario.html.twig', [
             'formulario' => $formulario->createView(),
             'titulo' => 'Editar habitación',
-            'mostrarImagenes' => false,
+            'mostrarImagenes' => true,
+            'imagenesDisponibles' => $this->habitacionManager->getImagenesDisponibles(),
+            'seleccionadas' => $seleccionadas,
+            'portada' => $portada,
         ], $respuesta);
     }
 }

@@ -129,4 +129,38 @@ class HabitacionManager
 
         $this->entityManager->flush();
     }
+
+    public function actualizarHabitacionConImagenes(
+        Habitacion $habitacion,
+        array $seleccionadas,
+        string $portada
+    ): void {
+        $seleccionadas = array_unique($seleccionadas);
+        $rutasActuales = [];
+
+        foreach ($habitacion->getImagenHabitacions()->toArray() as $imagen) {
+            $ruta = $imagen->getRuta();
+
+            if (!in_array($ruta, $seleccionadas, true)) {
+                $habitacion->removeImagenHabitacion($imagen);
+            } else {
+                $imagen->setPortada($ruta === $portada);
+                $rutasActuales[] = $ruta;
+            }
+        }
+
+        foreach ($seleccionadas as $archivo) {
+            if (!in_array($archivo, $rutasActuales, true)) {
+                $imagen = new ImagenHabitacion();
+                $imagen->setRuta($archivo);
+                $imagen->setPortada($archivo === $portada);
+
+                $habitacion->addImagenHabitacion($imagen);
+
+                $this->entityManager->persist($imagen);
+            }
+        }
+
+        $this->guardarHabitacion($habitacion);
+    }
 }
