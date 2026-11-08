@@ -58,17 +58,16 @@ class ReservaController extends AbstractController
         ]);
     }
 
-    // Confirmar y rechazar (CU014) es el paso siguiente.
     #[Route('/admin/reservas/{id}/confirmar', name: 'admin_reserva_confirmar', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function confirmar(int $id): Response
+    public function confirmar(int $id, Request $request): Response
     {
-        throw $this->createNotFoundException();
+        return $this->cambiarEstado($id, $request, fn ($reserva) => $this->reservaManager->confirmar($reserva));
     }
 
     #[Route('/admin/reservas/{id}/rechazar', name: 'admin_reserva_rechazar', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function rechazar(int $id): Response
+    public function rechazar(int $id, Request $request): Response
     {
-        throw $this->createNotFoundException();
+        return $this->cambiarEstado($id, $request, fn ($reserva) => $this->reservaManager->rechazar($reserva));
     }
 
     // Confirmar, revertir y cancelar (CU015, CU016) vienen después.
@@ -88,5 +87,34 @@ class ReservaController extends AbstractController
     public function cancelar(int $id): Response
     {
         throw $this->createNotFoundException();
+    }
+
+    private function cambiarEstado(int $id, Request $request, callable $transicion): Response
+    {
+        $token = $request->request->get('_token');
+        if (!\is_string($token) || !$this->isCsrfTokenValid('reserva'.$id, $token)) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $reserva = $this->reservaManager->obtenerReserva($id);
+        if ($reserva === null) {
+            throw $this->createNotFoundException();
+        }
+
+        try {
+            $mensaje = $transicion($reserva);
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('success', $e->getMessage());
+
+            return $this->redirectToRoute('admin_reservas');
+        } catch (\Throwable) {
+            $this->addFlash('success', 'No se pudo actualizar la reserva.');
+
+            return $this->redirectToRoute('admin_reservas');
+        }
+
+        $this->addFlash('success', $mensaje);
+
+        return $this->redirectToRoute('admin_reservas');
     }
 }

@@ -158,6 +158,30 @@ class ReservaManager
     }
 
     /**
+     * El admin confirma una reserva pendiente (CU014).
+     */
+    public function confirmar(Reserva $reserva): string
+    {
+        $this->exigirPendiente($reserva);
+        $reserva->setEstado(EstadoReserva::CONFIRMADA);
+        $this->entityManager->flush();
+
+        return 'La reserva #'.$reserva->getId().' fue confirmada.';
+    }
+
+    /**
+     * El admin rechaza una reserva pendiente: queda cancelada y libera la habitación (CU014).
+     */
+    public function rechazar(Reserva $reserva): string
+    {
+        $this->exigirPendiente($reserva);
+        $reserva->setEstado(EstadoReserva::CANCELADA);
+        $this->entityManager->flush();
+
+        return 'La reserva #'.$reserva->getId().' fue rechazada.';
+    }
+
+    /**
      * Tope del select de huéspedes: la mayor capacidad entre las habitaciones activas.
      */
     public function capacidadMaximaDeActivas(): int
@@ -228,6 +252,13 @@ class ReservaManager
         $noches = (string) $ingreso->diff($egreso)->days;
 
         return bcmul($noches, (string) $habitacion->getPrecioPorNoche(), 2);
+    }
+
+    private function exigirPendiente(Reserva $reserva): void
+    {
+        if ($reserva->getEstado() !== EstadoReserva::PENDIENTE) {
+            throw new \InvalidArgumentException('La reserva ya no se encuentra pendiente.');
+        }
     }
 
     private function esCancelablePorCliente(Reserva $reserva): bool
