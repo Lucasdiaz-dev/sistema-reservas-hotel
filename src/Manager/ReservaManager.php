@@ -45,6 +45,20 @@ class ReservaManager
     }
 
     /**
+     * La ficha pública solo muestra una habitación activa (CU004).
+     */
+    public function obtenerHabitacionActiva(int $id): Habitacion
+    {
+        $habitacion = $this->habitacionRepository->find($id);
+
+        if ($habitacion === null || !$habitacion->isActiva()) {
+            throw new \InvalidArgumentException('La habitación seleccionada no se encuentra disponible.');
+        }
+
+        return $habitacion;
+    }
+
+    /**
      * Tope del select de huéspedes: la mayor capacidad entre las habitaciones activas.
      */
     public function capacidadMaximaDeActivas(): int

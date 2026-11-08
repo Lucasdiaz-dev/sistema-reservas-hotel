@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Habitación {{ habitacion.numero }} · Hotel Litoral{% endblock %}
+
+{% block body %}
+{% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
+{% set portada = null %}
+{% set resto = [] %}
+{% for imagen in habitacion.imagenHabitacions %}
+    {% if imagen.portada and portada is null %}
+        {% set portada = imagen %}
+    {% else %}
+        {% set resto = resto|merge([imagen]) %}
+    {% endif %}
+{% endfor %}
+{% set imagenes = portada ? [portada]|merge(resto) : resto %}
+
+<div class="crumbs">Inicio › Buscar › Habitación {{ habitacion.numero }}</div>
+<div class="detail">
+    <div>
+        <div class="gallery{{ imagenes|length >= 4 ? ' g4' }}">
+            {% for imagen in imagenes %}
+                <figure class="{{ loop.first ? 'main' }}">
+                    <a href="#foto-{{ loop.index }}"><img src="{{ asset('img/habitaciones/' ~ imagen.ruta) }}" alt="Foto {{ loop.index }}"></a>
+                    {% if loop.first and imagen.portada %}<span class="tag">Portada</span>{% endif %}
+                </figure>
+            {% endfor %}
+        </div>
+        <div class="row" style="margin-top:18px">
+            <h1 style="margin:0">Habitación {{ habitacion.numero }}<span class="tdot"> · </span><span class="htipo">{{ tipoNombre[habitacion.tipo.value] }}</span></h1>
+            <span class="stars" style="font-size:18px" title="{{ habitacion.estrellas }} estrellas">{% for i in 1..habitacion.estrellas %}★{% endfor %}</span>
+        </div>
+        <p class="muted">{{ imagenes|length }} {{ imagenes|length == 1 ? 'imagen' : 'imágenes' }}</p>
+        {% for imagen in imagenes %}
+            {% set anterior = loop.first ? imagenes|length : loop.index - 1 %}
+            {% set siguiente = loop.last ? 1 : loop.index + 1 %}
+            <div class="lightbox" id="foto-{{ loop.index }}">
+                <a class="lb-bg" href="#"></a>
+                <div class="lb-box">
+                    <img src="{{ asset('img/habitaciones/' ~ imagen.ruta) }}" alt="Foto {{ loop.index }}">
+                    <div class="lb-bar">
+                        <a class="lbprev" href="#foto-{{ anterior }}" aria-label="Foto anterior" title="Anterior">Anterior</a>
+                        <span>{{ loop.index }} / {{ imagenes|length }}</span>
+                        <a class="lbnext" href="#foto-{{ siguiente }}" aria-label="Foto siguiente" title="Siguiente">Siguiente</a>
+                        <a class="btn lbclose" href="#" aria-label="Cerrar" title="Cerrar">Cerrar</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        <div class="specs">
+            <div><small>Tipo</small><b>{{ habitacion.tipo.value }}</b></div>
+            <div><small>Capacidad máxima</small><b>{{ habitacion.capacidadMaxima }} {{ habitacion.capacidadMaxima == 1 ? 'huésped' : 'huéspedes' }}</b></div>
+            <div><small>Precio por noche</small><b>${{ habitacion.precioPorNoche|number_format(0, ',', '.') }}</b></div>
+            <div><small>Número</small><b>{{ habitacion.numero }}</b></div>
+        </div>
+        <h2>Descripción</h2>
+        <p class="muted">{{ habitacion.descripcion }}</p>
+    </div>
+    <aside>
+        <form class="panel" method="get" action="{{ path('app_reserva_confirmar', {id: habitacion.id}) }}">
+            <h2 style="margin:0">Reservar</h2>
+            <p><b style="font-size:20px">${{ habitacion.precioPorNoche|number_format(0, ',', '.') }}</b> <span class="muted">/ noche</span></p>
+            <div class="dates">
+                <div><label>Fecha de ingreso</label><input type="date" name="ingreso" value="{{ ingreso }}"></div>
+                <div><label>Fecha de egreso</label><input type="date" name="egreso" value="{{ egreso }}"></div>
+            </div>
+            <label>Cantidad de huéspedes</label>
+            <select name="huespedes">
+                {% for cantidad in 1..habitacion.capacidadMaxima %}
+                    <option value="{{ cantidad }}"{{ huespedes == cantidad ? ' selected' }}>{{ cantidad }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn dark block" style="margin-top:12px" type="submit">Reservar</button>
+        </form>
+        {% if not app.user %}
+            <div class="note">Para reservar tenés que <a href="{{ path('app_login') }}"><u>iniciar sesión</u></a>.</div>
+        {% endif %}
+        <div class="note">Podés cancelar tu reserva hasta antes del día del check-in.</div>
+    </aside>
+</div>
+{% endblock %}
