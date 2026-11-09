@@ -15,10 +15,15 @@ class UsuarioManager
     {
     }
 
-    /** @return User[] */
-    public function getUsuarios(): array
+    /**
+     * Listado del admin. Con texto, la coincidencia es parcial en nombre,
+     * apellido o email.
+     *
+     * @return User[]
+     */
+    public function getUsuarios(string $busqueda = ''): array
     {
-        return $this->userRepository->findBy([], ['apellido' => 'ASC', 'nombre' => 'ASC', 'id' => 'ASC']);
+        return $this->userRepository->buscarPorNombreOEmail($busqueda);
     }
 
     public function getUsuario(int $id): ?User

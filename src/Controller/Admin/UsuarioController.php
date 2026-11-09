@@ -26,9 +26,9 @@ class UsuarioController extends AbstractController
     }
 
     #[Route('', name: 'admin_usuarios', methods: ['GET'])]
-    public function listarUsuarios(): Response
+    public function listarUsuarios(Request $request): Response
     {
-        return $this->mostrarListado();
+        return $this->mostrarListado($request);
     }
 
     #[Route('/{id}/editar', name: 'admin_usuario_editar', methods: ['POST'], requirements: ['id' => '\\d+'])]
@@ -37,7 +37,7 @@ class UsuarioController extends AbstractController
         $usuario = $this->usuarioManager->getUsuario($id);
         if ($usuario === null) {
             $this->addFlash('error', 'El usuario seleccionado ya no existe.');
-            return $this->redirectToRoute('admin_usuarios');
+            return $this->redirectToRoute('admin_usuarios', $this->parametrosBusqueda($request));
         }
         $administrador = $this->getUser();
         if (!$administrador instanceof User) {
@@ -46,48 +46,70 @@ class UsuarioController extends AbstractController
 
         // Los datos enviados solo se copian al usuario si el formulario es válido.
         $datos = clone $usuario;
-        $formulario = $this->crearFormulario($datos);
+        $formulario = $this->crearFormulario($datos, $this->busqueda($request));
         $formulario->handleRequest($request);
         if ($formulario->isSubmitted() && $formulario->isValid()) {
             try {
                 $this->usuarioManager->guardarUsuario($usuario, $datos, $formulario->get('rol')->getData(), $administrador);
                 $this->addFlash('success', 'La operación fue realizada correctamente.');
-                return $this->redirectToRoute('admin_usuarios');
+                return $this->redirectToRoute('admin_usuarios', $this->parametrosBusqueda($request));
             } catch (\DomainException $error) {
                 $formulario->addError(new FormError($error->getMessage()));
             } catch (\Exception $error) {
                 $this->logger->error('Error al guardar un usuario.', ['exception' => $error]);
                 $this->addFlash('error', 'No se pudo guardar la información del usuario.');
-                return $this->redirectToRoute('admin_usuarios');
+                return $this->redirectToRoute('admin_usuarios', $this->parametrosBusqueda($request));
             }
         }
 
-        return $this->mostrarListado($formulario, $id);
+        return $this->mostrarListado($request, $formulario, $id);
     }
 
-    private function crearFormulario(User $usuario): FormInterface
+    private function crearFormulario(User $usuario, string $busqueda): FormInterface
     {
+        $parametros = ['id' => $usuario->getId()];
+        if ($busqueda !== '') {
+            $parametros['q'] = $busqueda;
+        }
+
         return $this->fabricaDeFormularios->createNamed('usuario_admin_'.$usuario->getId(), UsuarioAdminType::class, $usuario, [
-            'action' => $this->generateUrl('admin_usuario_editar', ['id' => $usuario->getId()]),
+            'action' => $this->generateUrl('admin_usuario_editar', $parametros),
             'method' => 'POST',
             'csrf_token_id' => 'editar_usuario_'.$usuario->getId(),
         ]);
     }
 
-    private function mostrarListado(?FormInterface $formularioEditado = null, ?int $usuarioEditado = null): Response
+    private function mostrarListado(Request $request, ?FormInterface $formularioEditado = null, ?int $usuarioEditado = null): Response
     {
-        $usuarios = $this->usuarioManager->getUsuarios();
+        $busqueda = $this->busqueda($request);
+        $usuarios = $this->usuarioManager->getUsuarios($busqueda);
         $formularios = [];
         foreach ($usuarios as $usuario) {
             $formularios[$usuario->getId()] = ($usuario->getId() === $usuarioEditado
                 ? $formularioEditado
-                : $this->crearFormulario(clone $usuario))->createView();
+                : $this->crearFormulario(clone $usuario, $busqueda))->createView();
         }
 
         return $this->render('admin/usuarios/index.html.twig', [
             'usuarios' => $usuarios,
             'formularios' => $formularios,
             'usuarioEditado' => $usuarioEditado,
+            'q' => $busqueda,
         ], new Response(null, $formularioEditado !== null ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    }
+
+    private function busqueda(Request $request): string
+    {
+        $q = $request->query->get('q', '');
+
+        return is_string($q) ? trim($q) : '';
+    }
+
+    /** @return array<string, string> */
+    private function parametrosBusqueda(Request $request): array
+    {
+        $busqueda = $this->busqueda($request);
+
+        return $busqueda === '' ? [] : ['q' => $busqueda];
     }
 }

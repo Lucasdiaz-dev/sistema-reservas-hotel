@@ -3,6 +3,14 @@
 {% block body %}
     <div class="crumbs">Admin › Usuarios</div>
     <div class="toolbar"><h1>Usuarios</h1></div>
+    <form class="searchbar" method="get" action="{{ path('admin_usuarios') }}" role="search" style="margin-bottom:14px">
+        <div>
+            <label for="buscar-usuarios">Buscar</label>
+            <input id="buscar-usuarios" type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o email" autocomplete="off">
+        </div>
+        <button class="btn dark" type="submit">Buscar</button>
+        <a class="btn" href="{{ path('admin_usuarios') }}">Limpiar</a>
+    </form>
     <table class="table">
         <thead><tr><th>Nombre</th><th>Apellido</th><th>Email</th><th>Teléfono</th><th>Rol</th><th>Editar</th></tr></thead>
         <tbody>
@@ -44,7 +52,7 @@
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="6">No hay usuarios registrados.</td></tr>
+                <tr><td colspan="6">{% if q %}No se encontraron usuarios{% else %}No hay usuarios registrados.{% endif %}</td></tr>
             {% endfor %}
         </tbody>
     </table>
