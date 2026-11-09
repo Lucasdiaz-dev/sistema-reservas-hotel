@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{% if reserva.estado.value == 'CANCELADA' %}Reserva cancelada{% else %}Cancelación solicitada{% endif %} · Hotel Litoral{% endblock %}
+{% block title %}{% if reserva.estado.value == 'CANCELADA' %}Reserva cancelada{% else %}Cancelación solicitada{% endif %}{% endblock %}
 
 {% block body %}
 {% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
