@@ -1,0 +1,7 @@
+{% set etiqueta = {
+    PENDIENTE: {clase: 'pend', texto: 'Pendiente'},
+    CONFIRMADA: {clase: 'conf', texto: 'Confirmada'},
+    CANCELACION_PENDIENTE: {clase: 'cpend', texto: 'Cancelación pendiente'},
+    CANCELADA: {clase: 'cancel', texto: 'Cancelada'}
+} %}
+<span class="pill {{ etiqueta[estado].clase }}">{{ etiqueta[estado].texto }}</span>

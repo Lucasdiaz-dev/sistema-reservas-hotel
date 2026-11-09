@@ -1,0 +1,359 @@
+<?php
+
+namespace App\Manager;
+
+use App\Entity\Habitacion;
+use App\Entity\Reserva;
+use App\Entity\User;
+use App\Enum\EstadoReserva;
+use App\Enum\TipoHabitacion;
+use App\Repository\HabitacionRepository;
+use App\Repository\ReservaRepository;
+use Doctrine\ORM\EntityManagerInterface;
+
+class ReservaManager
+{
+    private HabitacionRepository $habitacionRepository;
+    private ReservaRepository $reservaRepository;
+    private EntityManagerInterface $entityManager;
+
+    public function __construct(HabitacionRepository $habitacionRepository, ReservaRepository $reservaRepository, EntityManagerInterface $entityManager)
+    {
+        $this->habitacionRepository = $habitacionRepository;
+        $this->reservaRepository = $reservaRepository;
+        $this->entityManager = $entityManager;
+    }
+
+    /**
+     * Habitaciones disponibles para la búsqueda pública (CU003).
+     * El tipo es el filtro opcional de los chips.
+     *
+     * @return Habitacion[]
+     */
+    public function buscarDisponibles(\DateTimeImmutable $ingreso, \DateTimeImmutable $egreso, int $huespedes, ?TipoHabitacion $tipo = null): array
+    {
+        $this->validarFechasBusqueda($ingreso, $egreso);
+
+        $habitaciones = $this->habitacionRepository->buscarDisponibles(
+            $this->sinHora($ingreso),
+            $this->sinHora($egreso),
+            $huespedes
+        );
+
+        if ($tipo === null) {
+            return $habitaciones;
+        }
+
+        return array_values(array_filter(
+            $habitaciones,
+            static fn (Habitacion $habitacion): bool => $habitacion->getTipo() === $tipo
+        ));
+    }
+
+    /**
+     * Reservas del panel, para el período pedido (CU008).
+     *
+     * @return Reserva[]
+     */
+    public function buscarPorPeriodo(\DateTimeImmutable $desde, \DateTimeImmutable $hasta): array
+    {
+        $this->validarPeriodo($desde, $hasta);
+
+        return $this->reservaRepository->buscarPorPeriodo($this->sinHora($desde), $this->sinHora($hasta));
+    }
+
+    /**
+     * Reservas del cliente, separadas como en Mis reservas.
+     * Próximas: pendiente, confirmada y cancelación pendiente. Canceladas aparte.
+     *
+     * @return array{proximas: Reserva[], canceladas: Reserva[]}
+     */
+    public function listarDeUsuario(User $usuario): array
+    {
+        $reservas = $usuario->getReservas()->toArray();
+        usort($reservas, static fn (Reserva $a, Reserva $b): int => $a->getFechaIngreso() <=> $b->getFechaIngreso());
+
+        $proximas = [];
+        $canceladas = [];
+        foreach ($reservas as $reserva) {
+            if ($reserva->getEstado() === EstadoReserva::CANCELADA) {
+                $canceladas[] = $reserva;
+            } else {
+                $proximas[] = $reserva;
+            }
+        }
+
+        return ['proximas' => $proximas, 'canceladas' => $canceladas];
+    }
+
+    /**
+     * El período del admin tiene que traer las dos fechas, y desde no puede pasar de hasta.
+     */
+    public function validarPeriodo(?\DateTimeImmutable $desde, ?\DateTimeImmutable $hasta): void
+    {
+        if ($desde === null || $hasta === null || $this->sinHora($desde) > $this->sinHora($hasta)) {
+            throw new \InvalidArgumentException('La fecha desde no puede ser posterior a la fecha hasta.');
+        }
+    }
+
+    /**
+     * La ficha pública solo muestra una habitación activa (CU004).
+     */
+    public function obtenerHabitacionActiva(int $id): Habitacion
+    {
+        $habitacion = $this->habitacionRepository->find($id);
+
+        if ($habitacion === null || !$habitacion->isActiva()) {
+            throw new \InvalidArgumentException('La habitación seleccionada no se encuentra disponible.');
+        }
+
+        return $habitacion;
+    }
+
+    public function obtenerReserva(int $id): ?Reserva
+    {
+        return $this->reservaRepository->find($id);
+    }
+
+    /**
+     * Revalida y registra la reserva en PENDIENTE, con el total calculado en el servidor.
+     */
+    public function registrar(Habitacion $habitacion, User $usuario, \DateTimeImmutable $ingreso, \DateTimeImmutable $egreso, int $huespedes): Reserva
+    {
+        $this->validarParaReserva($habitacion, $ingreso, $egreso, $huespedes);
+
+        $reserva = (new Reserva())
+            ->setHabitacion($habitacion)
+            ->setUsuario($usuario)
+            ->setFechaIngreso($this->sinHora($ingreso))
+            ->setFechaEgreso($this->sinHora($egreso))
+            ->setCantidadHuespedes($huespedes)
+            ->setTotal($this->calcularTotal($habitacion, $ingreso, $egreso))
+            ->setEstado(EstadoReserva::PENDIENTE);
+
+        $this->entityManager->persist($reserva);
+        $this->entityManager->flush();
+
+        return $reserva;
+    }
+
+    /**
+     * El cliente puede cancelar la suya si está PENDIENTE o CONFIRMADA y todavía entra en el plazo.
+     */
+    public function puedeCancelarCliente(Reserva $reserva, User $usuario): bool
+    {
+        if ($reserva->getUsuario()?->getId() !== $usuario->getId()) {
+            return false;
+        }
+
+        if (!$this->esCancelablePorCliente($reserva)) {
+            return false;
+        }
+
+        return $this->dentroDelPlazoDeCancelacion($reserva);
+    }
+
+    /**
+     * PENDIENTE pasa a CANCELADA. CONFIRMADA pasa a CANCELACION_PENDIENTE.
+     */
+    public function cancelarPorCliente(Reserva $reserva): string
+    {
+        if (!$this->esCancelablePorCliente($reserva)) {
+            throw new \InvalidArgumentException('La reserva no puede cancelarse.');
+        }
+
+        if (!$this->dentroDelPlazoDeCancelacion($reserva)) {
+            throw new \InvalidArgumentException('El plazo de cancelación venció.');
+        }
+
+        $mensaje = $reserva->getEstado() === EstadoReserva::PENDIENTE
+            ? 'La reserva #'.$reserva->getId().' fue cancelada.'
+            : 'Tu cancelación quedó pendiente de confirmación del hotel.';
+
+        $reserva->setEstado(
+            $reserva->getEstado() === EstadoReserva::PENDIENTE
+                ? EstadoReserva::CANCELADA
+                : EstadoReserva::CANCELACION_PENDIENTE
+        );
+
+        $this->entityManager->flush();
+
+        return $mensaje;
+    }
+
+    /**
+     * El admin confirma una reserva pendiente (CU014).
+     */
+    public function confirmar(Reserva $reserva): string
+    {
+        $this->exigirPendiente($reserva);
+        $reserva->setEstado(EstadoReserva::CONFIRMADA);
+        $this->entityManager->flush();
+
+        return 'La reserva #'.$reserva->getId().' fue confirmada.';
+    }
+
+    /**
+     * El admin rechaza una reserva pendiente: queda cancelada y libera la habitación (CU014).
+     */
+    public function rechazar(Reserva $reserva): string
+    {
+        $this->exigirPendiente($reserva);
+        $reserva->setEstado(EstadoReserva::CANCELADA);
+        $this->entityManager->flush();
+
+        return 'La reserva #'.$reserva->getId().' fue rechazada.';
+    }
+
+    /**
+     * El admin confirma la cancelación que pidió el cliente: queda cancelada (CU015).
+     */
+    public function confirmarCancelacion(Reserva $reserva): string
+    {
+        $this->exigirCancelacionPendiente($reserva);
+        $reserva->setEstado(EstadoReserva::CANCELADA);
+        $this->entityManager->flush();
+
+        return 'La cancelación de la reserva #'.$reserva->getId().' fue confirmada.';
+    }
+
+    /**
+     * El cliente desistió: la cancelación pendiente vuelve a confirmada (CU015).
+     */
+    public function revertirCancelacion(Reserva $reserva): string
+    {
+        $this->exigirCancelacionPendiente($reserva);
+        $reserva->setEstado(EstadoReserva::CONFIRMADA);
+        $this->entityManager->flush();
+
+        return 'La cancelación de la reserva #'.$reserva->getId().' fue revertida.';
+    }
+
+    /**
+     * El admin cancela una confirmada por un inconveniente del hotel, sin la regla de 24 h (CU016).
+     */
+    public function cancelarPorAdmin(Reserva $reserva): string
+    {
+        if ($reserva->getEstado() !== EstadoReserva::CONFIRMADA) {
+            throw new \InvalidArgumentException('La reserva no se encuentra confirmada.');
+        }
+
+        $reserva->setEstado(EstadoReserva::CANCELADA);
+        $this->entityManager->flush();
+
+        return 'La reserva #'.$reserva->getId().' fue cancelada.';
+    }
+
+    /**
+     * Tope del select de huéspedes: la mayor capacidad entre las habitaciones activas.
+     */
+    public function capacidadMaximaDeActivas(): int
+    {
+        $maxima = 1;
+
+        foreach ($this->habitacionRepository->findBy(['activa' => true]) as $habitacion) {
+            $maxima = max($maxima, (int) $habitacion->getCapacidadMaxima());
+        }
+
+        return $maxima;
+    }
+
+    /**
+     * Fechas de la búsqueda: tienen que venir las dos, e ingreso anterior a egreso.
+     */
+    public function validarFechasBusqueda(?\DateTimeImmutable $ingreso, ?\DateTimeImmutable $egreso): void
+    {
+        if ($ingreso === null || $egreso === null || $this->sinHora($ingreso) >= $this->sinHora($egreso)) {
+            throw new \InvalidArgumentException('La fecha de ingreso debe ser anterior a la fecha de egreso.');
+        }
+    }
+
+    /**
+     * Fechas, huéspedes y disponibilidad antes de mostrar o registrar una reserva (CU005).
+     */
+    public function validarParaReserva(Habitacion $habitacion, \DateTimeImmutable $ingreso, \DateTimeImmutable $egreso, int $huespedes): void
+    {
+        $ingreso = $this->sinHora($ingreso);
+        $egreso = $this->sinHora($egreso);
+        $hoy = new \DateTimeImmutable('today');
+
+        if ($ingreso < $hoy) {
+            throw new \InvalidArgumentException('La fecha de ingreso no puede ser anterior a la fecha actual.');
+        }
+
+        if ($egreso <= $ingreso) {
+            throw new \InvalidArgumentException('La fecha de egreso debe ser posterior a la fecha de ingreso.');
+        }
+
+        if ($huespedes <= 0 || $huespedes > $habitacion->getCapacidadMaxima()) {
+            throw new \InvalidArgumentException(
+                'La cantidad de huéspedes supera la capacidad máxima. Capacidad máxima: '.$habitacion->getCapacidadMaxima()
+            );
+        }
+
+        if (!$habitacion->isActiva()) {
+            throw new \InvalidArgumentException('La habitación seleccionada no se encuentra disponible.');
+        }
+
+        if ($this->reservaRepository->existeSuperpuesta($habitacion, $ingreso, $egreso)) {
+            throw new \InvalidArgumentException('La habitación no está disponible para las fechas seleccionadas.');
+        }
+    }
+
+    /**
+     * Noches × precio por noche vigente. Queda como decimal en string (RN09).
+     */
+    public function calcularTotal(Habitacion $habitacion, \DateTimeImmutable $ingreso, \DateTimeImmutable $egreso): string
+    {
+        $ingreso = $this->sinHora($ingreso);
+        $egreso = $this->sinHora($egreso);
+
+        if ($egreso <= $ingreso) {
+            throw new \InvalidArgumentException('La fecha de egreso debe ser posterior a la fecha de ingreso.');
+        }
+
+        $noches = (string) $ingreso->diff($egreso)->days;
+
+        return bcmul($noches, (string) $habitacion->getPrecioPorNoche(), 2);
+    }
+
+    private function exigirPendiente(Reserva $reserva): void
+    {
+        if ($reserva->getEstado() !== EstadoReserva::PENDIENTE) {
+            throw new \InvalidArgumentException('La reserva ya no se encuentra pendiente.');
+        }
+    }
+
+    private function exigirCancelacionPendiente(Reserva $reserva): void
+    {
+        if ($reserva->getEstado() !== EstadoReserva::CANCELACION_PENDIENTE) {
+            throw new \InvalidArgumentException('La reserva no tiene una cancelación pendiente.');
+        }
+    }
+
+    private function esCancelablePorCliente(Reserva $reserva): bool
+    {
+        return $reserva->getEstado() === EstadoReserva::PENDIENTE
+            || $reserva->getEstado() === EstadoReserva::CONFIRMADA;
+    }
+
+    /**
+     * Hasta 24 h antes del check-in (ingreso a las 14:00).
+     */
+    private function dentroDelPlazoDeCancelacion(Reserva $reserva): bool
+    {
+        $ingreso = $reserva->getFechaIngreso();
+        if ($ingreso === null) {
+            return false;
+        }
+
+        $limite = $ingreso->setTime(14, 0)->modify('-24 hours');
+
+        return new \DateTimeImmutable() < $limite;
+    }
+
+    private function sinHora(\DateTimeImmutable $fecha): \DateTimeImmutable
+    {
+        return $fecha->setTime(0, 0);
+    }
+}

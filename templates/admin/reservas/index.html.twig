@@ -1,0 +1,138 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin · Reservas · Hotel Litoral{% endblock %}
+
+{% block body %}
+{% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
+{% set estadoBadge = {
+    PENDIENTE: {clase: 'pend', texto: 'Pendiente'},
+    CONFIRMADA: {clase: 'conf', texto: 'Confirmada'},
+    CANCELACION_PENDIENTE: {clase: 'cpend', texto: 'Cancelación pendiente'},
+    CANCELADA: {clase: 'cancel', texto: 'Cancelada'}
+} %}
+{% set filtro = desde and hasta ? {filtro_reservas: {desde: desde|date('Y-m-d'), hasta: hasta|date('Y-m-d')}} : {} %}
+
+<div class="crumbs">Admin › Reservas</div>
+<h1>Reservas por período</h1>
+
+{{ form_start(formulario, {attr: {class: 'searchbar'}}) }}
+    <div>
+        {{ form_label(formulario.desde) }}
+        {{ form_widget(formulario.desde) }}
+    </div>
+    <div>
+        {{ form_label(formulario.hasta) }}
+        {{ form_widget(formulario.hasta) }}
+    </div>
+    <div></div>
+    <button class="btn dark" type="submit">Filtrar</button>
+{{ form_end(formulario, {render_rest: false}) }}
+
+{% if error %}
+    <p class="muted" style="margin:12px 0 6px">{{ error }}</p>
+{% elseif reservas is empty %}
+    <p class="muted" style="margin:12px 0 6px">No existen reservas en el período seleccionado.</p>
+{% else %}
+    <p class="muted" style="margin:12px 0 6px">{{ reservas|length }} {{ reservas|length == 1 ? 'reserva' : 'reservas' }} entre {{ desde|date('d/m/Y') }} y {{ hasta|date('d/m/Y') }}</p>
+    <table class="table">
+        <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th>Habitación</th>
+            <th>Fechas</th>
+            <th>Huésp.</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th></th>
+        </tr>
+        {% for reserva in reservas %}
+            {% set estado = estadoBadge[reserva.estado.value] %}
+            <tr>
+                <td>#{{ reserva.id }}</td>
+                <td>
+                    <b>{{ reserva.usuario.nombre }} {{ reserva.usuario.apellido }}</b>
+                    <div class="muted" style="font-size:12px">{{ reserva.usuario.email }}<br>{{ reserva.usuario.telefono }}</div>
+                </td>
+                <td>{{ reserva.habitacion.numero }} · {{ tipoNombre[reserva.habitacion.tipo.value] }}</td>
+                <td>{{ reserva.fechaIngreso|date('d/m') }} → {{ reserva.fechaEgreso|date('d/m') }}</td>
+                <td>{{ reserva.cantidadHuespedes }}</td>
+                <td>${{ reserva.total|number_format(0, ',', '.') }}</td>
+                <td><span class="badge {{ estado.clase }}">{{ estado.texto }}</span></td>
+                <td style="text-align:right;white-space:nowrap">
+                    {% if reserva.estado.value == 'PENDIENTE' %}
+                        <details class="confirm">
+                            <summary class="btn dark">Confirmar</summary>
+                            <div class="confirmbox">
+                                <p>¿Confirmar la reserva <b>#{{ reserva.id }}</b>? El pago ya fue coordinado con el cliente.</p>
+                                <form method="post" action="{{ path('admin_reserva_confirmar', {id: reserva.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
+                                    <div class="row" style="justify-content:flex-end">
+                                        <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
+                                        <button class="btn dark" type="submit">Confirmar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </details>
+                        <details class="confirm">
+                            <summary class="btn danger">Rechazar</summary>
+                            <div class="confirmbox">
+                                <p>¿Rechazar la reserva <b>#{{ reserva.id }}</b>? Pasa a Cancelada y la habitación queda disponible.</p>
+                                <form method="post" action="{{ path('admin_reserva_rechazar', {id: reserva.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
+                                    <div class="row" style="justify-content:flex-end">
+                                        <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
+                                        <button class="btn dark" type="submit">Rechazar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </details>
+                    {% elseif reserva.estado.value == 'CONFIRMADA' %}
+                        <details class="confirm">
+                            <summary class="btn danger">Cancelar</summary>
+                            <div class="confirmbox">
+                                <p>¿Cancelar la reserva confirmada <b>#{{ reserva.id }}</b> por un inconveniente del hotel? Pasa a Cancelada y la habitación queda disponible. Avisale al cliente por teléfono.</p>
+                                <form method="post" action="{{ path('admin_reserva_cancelar', {id: reserva.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
+                                    <div class="row" style="justify-content:flex-end">
+                                        <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
+                                        <button class="btn dark" type="submit">Cancelar reserva</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </details>
+                    {% elseif reserva.estado.value == 'CANCELACION_PENDIENTE' %}
+                        <details class="confirm">
+                            <summary class="btn">Confirmar cancelación</summary>
+                            <div class="confirmbox">
+                                <p>¿Confirmar la cancelación de la reserva <b>#{{ reserva.id }}</b>? Pasa a Cancelada y la habitación queda disponible.</p>
+                                <form method="post" action="{{ path('admin_reserva_confirmar_cancelacion', {id: reserva.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
+                                    <div class="row" style="justify-content:flex-end">
+                                        <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
+                                        <button class="btn dark" type="submit">Confirmar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </details>
+                        <details class="confirm">
+                            <summary class="btn">Revertir</summary>
+                            <div class="confirmbox">
+                                <p>¿Revertir la cancelación de la reserva <b>#{{ reserva.id }}</b>? El cliente desistió: vuelve a Confirmada y la habitación sigue bloqueada.</p>
+                                <form method="post" action="{{ path('admin_reserva_revertir_cancelacion', {id: reserva.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
+                                    <div class="row" style="justify-content:flex-end">
+                                        <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
+                                        <button class="btn dark" type="submit">Revertir</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </details>
+                    {% else %}
+                        <span class="muted" style="font-size:12px">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endif %}
+{% endblock %}
