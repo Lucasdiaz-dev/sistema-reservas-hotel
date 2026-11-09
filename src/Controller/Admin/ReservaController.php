@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Enum\EstadoReserva;
 use App\Form\FiltroReservasType;
 use App\Manager\ReservaManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,6 +28,7 @@ class ReservaController extends AbstractController
         $form = $this->createForm(FiltroReservasType::class, [
             'desde' => $hoy->modify('-30 days'),
             'hasta' => $hoy->modify('+90 days'),
+            'estado' => null,
         ]);
         $form->handleRequest($request);
 
@@ -34,16 +36,19 @@ class ReservaController extends AbstractController
         $error = null;
         $desde = null;
         $hasta = null;
+        $estado = null;
 
         if ($form->isSubmitted() && !$form->isValid()) {
             $error = 'La fecha desde no puede ser posterior a la fecha hasta.';
         } else {
             $desde = $form->get('desde')->getData();
             $hasta = $form->get('hasta')->getData();
+            $estadoSeleccionado = $form->get('estado')->getData();
+            $estado = $estadoSeleccionado instanceof EstadoReserva ? $estadoSeleccionado : null;
 
             try {
                 $this->reservaManager->validarPeriodo($desde, $hasta);
-                $reservas = $this->reservaManager->buscarPorPeriodo($desde, $hasta);
+                $reservas = $this->reservaManager->buscarPorPeriodo($desde, $hasta, $estado);
             } catch (\InvalidArgumentException $e) {
                 $error = $e->getMessage();
             }
@@ -55,6 +60,7 @@ class ReservaController extends AbstractController
             'error' => $error,
             'desde' => $desde,
             'hasta' => $hasta,
+            'estadoFiltro' => $estado,
         ]);
     }
 
@@ -105,15 +111,47 @@ class ReservaController extends AbstractController
         } catch (\InvalidArgumentException $e) {
             $this->addFlash('success', $e->getMessage());
 
-            return $this->redirectToRoute('admin_reservas');
+            return $this->redirectToRoute('admin_reservas', $this->parametrosFiltro($request));
         } catch (\Throwable) {
             $this->addFlash('success', 'No se pudo actualizar la reserva.');
 
-            return $this->redirectToRoute('admin_reservas');
+            return $this->redirectToRoute('admin_reservas', $this->parametrosFiltro($request));
         }
 
         $this->addFlash('success', $mensaje);
 
-        return $this->redirectToRoute('admin_reservas');
+        return $this->redirectToRoute('admin_reservas', $this->parametrosFiltro($request));
+    }
+
+    /**
+     * @return array<string, array<string, string>>
+     */
+    private function parametrosFiltro(Request $request): array
+    {
+        $consulta = $request->query->all();
+        $raw = $consulta['filtro_reservas'] ?? null;
+        if (!\is_array($raw)) {
+            return [];
+        }
+
+        $filtros = [];
+        foreach (['desde', 'hasta'] as $campo) {
+            $valor = $raw[$campo] ?? null;
+            if (!\is_string($valor)) {
+                continue;
+            }
+
+            $fecha = \DateTimeImmutable::createFromFormat('!Y-m-d', $valor);
+            if ($fecha instanceof \DateTimeImmutable && $fecha->format('Y-m-d') === $valor) {
+                $filtros[$campo] = $valor;
+            }
+        }
+
+        $estado = $raw['estado'] ?? null;
+        if (\is_string($estado) && EstadoReserva::tryFrom($estado) !== null) {
+            $filtros['estado'] = $estado;
+        }
+
+        return $filtros === [] ? [] : ['filtro_reservas' => $filtros];
     }
 }

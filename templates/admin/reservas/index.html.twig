@@ -10,7 +10,14 @@
     CANCELACION_PENDIENTE: {clase: 'cpend', texto: 'Cancelación pendiente'},
     CANCELADA: {clase: 'cancel', texto: 'Cancelada'}
 } %}
-{% set filtro = desde and hasta ? {filtro_reservas: {desde: desde|date('Y-m-d'), hasta: hasta|date('Y-m-d')}} : {} %}
+{% set filtroDatos = {} %}
+{% if desde and hasta %}
+    {% set filtroDatos = {desde: desde|date('Y-m-d'), hasta: hasta|date('Y-m-d')} %}
+    {% if estadoFiltro %}
+        {% set filtroDatos = filtroDatos|merge({estado: estadoFiltro.value}) %}
+    {% endif %}
+{% endif %}
+{% set filtro = filtroDatos ? {filtro_reservas: filtroDatos} : {} %}
 
 <div class="crumbs">Admin › Reservas</div>
 <h1>Reservas por período</h1>
@@ -24,7 +31,10 @@
         {{ form_label(formulario.hasta) }}
         {{ form_widget(formulario.hasta) }}
     </div>
-    <div></div>
+    <div>
+        {{ form_label(formulario.estado) }}
+        {{ form_widget(formulario.estado) }}
+    </div>
     <button class="btn dark" type="submit">Filtrar</button>
 {{ form_end(formulario, {render_rest: false}) }}
 
@@ -64,7 +74,7 @@
                             <summary class="btn dark">Confirmar</summary>
                             <div class="confirmbox">
                                 <p>¿Confirmar la reserva <b>#{{ reserva.id }}</b>? El pago ya fue coordinado con el cliente.</p>
-                                <form method="post" action="{{ path('admin_reserva_confirmar', {id: reserva.id}) }}">
+                                <form method="post" action="{{ path('admin_reserva_confirmar', {id: reserva.id}|merge(filtro)) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
                                     <div class="row" style="justify-content:flex-end">
                                         <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
@@ -77,7 +87,7 @@
                             <summary class="btn danger">Rechazar</summary>
                             <div class="confirmbox">
                                 <p>¿Rechazar la reserva <b>#{{ reserva.id }}</b>? Pasa a Cancelada y la habitación queda disponible.</p>
-                                <form method="post" action="{{ path('admin_reserva_rechazar', {id: reserva.id}) }}">
+                                <form method="post" action="{{ path('admin_reserva_rechazar', {id: reserva.id}|merge(filtro)) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
                                     <div class="row" style="justify-content:flex-end">
                                         <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
@@ -91,7 +101,7 @@
                             <summary class="btn danger">Cancelar</summary>
                             <div class="confirmbox">
                                 <p>¿Cancelar la reserva confirmada <b>#{{ reserva.id }}</b> por un inconveniente del hotel? Pasa a Cancelada y la habitación queda disponible. Avisale al cliente por teléfono.</p>
-                                <form method="post" action="{{ path('admin_reserva_cancelar', {id: reserva.id}) }}">
+                                <form method="post" action="{{ path('admin_reserva_cancelar', {id: reserva.id}|merge(filtro)) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
                                     <div class="row" style="justify-content:flex-end">
                                         <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
@@ -105,7 +115,7 @@
                             <summary class="btn">Confirmar cancelación</summary>
                             <div class="confirmbox">
                                 <p>¿Confirmar la cancelación de la reserva <b>#{{ reserva.id }}</b>? Pasa a Cancelada y la habitación queda disponible.</p>
-                                <form method="post" action="{{ path('admin_reserva_confirmar_cancelacion', {id: reserva.id}) }}">
+                                <form method="post" action="{{ path('admin_reserva_confirmar_cancelacion', {id: reserva.id}|merge(filtro)) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
                                     <div class="row" style="justify-content:flex-end">
                                         <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>
@@ -118,7 +128,7 @@
                             <summary class="btn">Revertir</summary>
                             <div class="confirmbox">
                                 <p>¿Revertir la cancelación de la reserva <b>#{{ reserva.id }}</b>? El cliente desistió: vuelve a Confirmada y la habitación sigue bloqueada.</p>
-                                <form method="post" action="{{ path('admin_reserva_revertir_cancelacion', {id: reserva.id}) }}">
+                                <form method="post" action="{{ path('admin_reserva_revertir_cancelacion', {id: reserva.id}|merge(filtro)) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token('reserva' ~ reserva.id) }}">
                                     <div class="row" style="justify-content:flex-end">
                                         <a class="btn" href="{{ path('admin_reservas', filtro) }}">Volver</a>

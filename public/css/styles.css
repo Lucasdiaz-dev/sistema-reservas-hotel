@@ -185,6 +185,10 @@ textarea {
   gap: 14px;
   align-items: end;
 }
+.searchbar > div,
+.searchbar select {
+  min-width: 0;
+}
 .chips {
   display: flex;
   gap: 6px;
@@ -1488,7 +1492,8 @@ details.visor summary::-webkit-details-marker {
   .searchbar > div {
     min-width: 0;
   }
-  .searchbar input {
+  .searchbar input,
+  .searchbar select {
     min-width: 0;
     padding: 11px 8px;
   }
