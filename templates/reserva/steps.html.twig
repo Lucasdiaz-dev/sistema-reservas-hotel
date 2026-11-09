@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Reservar habitación · Hotel Litoral{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ turbo_exempts_page_from_cache() }}
+{% endblock %}
+
+{% block body %}
+{% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
+{% set meses = {
+    '1': 'enero', '2': 'febrero', '3': 'marzo', '4': 'abril',
+    '5': 'mayo', '6': 'junio', '7': 'julio', '8': 'agosto',
+    '9': 'septiembre', '10': 'octubre', '11': 'noviembre', '12': 'diciembre'
+} %}
+{% set portada = null %}
+{% for imagen in habitacion.imagenHabitacions %}
+    {% if imagen.portada and portada is null %}
+        {% set portada = imagen %}
+    {% endif %}
+{% endfor %}
+{% if ingreso|date('Y-m') == egreso|date('Y-m') %}
+    {% set periodo = ingreso|date('j') ~ ' – ' ~ egreso|date('j') ~ ' de ' ~ meses[ingreso|date('n')] ~ ' de ' ~ ingreso|date('Y') %}
+{% elseif ingreso|date('Y') == egreso|date('Y') %}
+    {% set periodo = ingreso|date('j') ~ ' de ' ~ meses[ingreso|date('n')] ~ ' – ' ~ egreso|date('j') ~ ' de ' ~ meses[egreso|date('n')] ~ ' de ' ~ ingreso|date('Y') %}
+{% else %}
+    {% set periodo = ingreso|date('j') ~ ' de ' ~ meses[ingreso|date('n')] ~ ' de ' ~ ingreso|date('Y') ~ ' – ' ~ egreso|date('j') ~ ' de ' ~ meses[egreso|date('n')] ~ ' de ' ~ egreso|date('Y') %}
+{% endif %}
+
+<div class="crumbs">Inicio › Habitación {{ habitacion.numero }} › Reservar</div>
+<section class="pendwrap">
+    <article class="pendcard">
+        <div class="pph">
+            {% if portada %}
+                <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="">
+            {% endif %}
+        </div>
+        <h3>Habitación {{ habitacion.numero }} · {{ tipoNombre[habitacion.tipo.value] }}</h3>
+        <div class="tdates">{{ periodo }}</div>
+        <div class="pbot">{{ huespedes }} {{ huespedes == 1 ? 'huésped' : 'huéspedes' }}<br>${{ total|number_format(0, ',', '.') }} total</div>
+    </article>
+    <div class="pendtxt">
+        <h1>Reservá esta habitación</h1>
+        <ol class="reserve-steps">
+            <li>Iniciá sesión o registrate</li>
+            <li>Confirmá la reserva</li>
+            <li>Revisá tu solicitud</li>
+        </ol>
+        <div class="reserve-actions">
+            <a class="btn dark" href="{{ path('app_login') ~ '?' ~ {_target_path: destino}|url_encode }}">Iniciar sesión</a>
+            <a class="btn" href="{{ path('app_register') ~ '?' ~ {_target_path: destino}|url_encode }}">Registrarme</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

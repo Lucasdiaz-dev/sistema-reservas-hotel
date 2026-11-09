@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\RegistrationFormType;
+use App\Security\InternalTargetPath;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -17,11 +18,12 @@ class RegistrationController extends AbstractController
     private const REGISTRATION_WELCOME = 'registration_welcome';
 
     #[Route('/register', name: 'app_register', methods: ['GET', 'POST'])]
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, Security $security, EntityManagerInterface $entityManager): Response
+    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, Security $security, EntityManagerInterface $entityManager, InternalTargetPath $internalTargetPath): Response
     {
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
+        $targetPath = $internalTargetPath->reservationConfirmPath($request, $request->query->get('_target_path'));
 
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var string $plainPassword */
@@ -33,6 +35,13 @@ class RegistrationController extends AbstractController
             $entityManager->flush();
 
             $security->login($user, 'form_login', 'main');
+
+            if ($targetPath !== null) {
+                $internalTargetPath->forget($request, 'main');
+
+                return $this->redirect($targetPath);
+            }
+
             $request->getSession()->set(self::REGISTRATION_WELCOME, true);
 
             return $this->redirectToRoute('app_bienvenida');
@@ -40,6 +49,7 @@ class RegistrationController extends AbstractController
 
         return $this->render('registration/register.html.twig', [
             'registrationForm' => $form,
+            'target_path' => $targetPath,
         ]);
     }
 

@@ -12,7 +12,7 @@
             <p class="muted">Con tu email vas a poder reservar y seguir tus reservas.</p>
         </div>
     </div>
-    {{ form_start(registrationForm, {attr: {novalidate: 'novalidate'}}) }}
+    {{ form_start(registrationForm, {action: target_path ? path('app_register') ~ '?' ~ {_target_path: target_path}|url_encode : path('app_register'), attr: {novalidate: 'novalidate'}}) }}
         <h1 style="margin:0">Registro</h1>
         {% for error in registrationForm.vars.errors %}
             <div class="flash error">{{ error.message }}</div>
@@ -56,7 +56,7 @@
         </label>
         {% for error in registrationForm.agreeTerms.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
         <button class="btn dark block" type="submit">Crear cuenta</button>
-        <p class="muted"><span class="req">*</span> Campos obligatorios · ¿Ya tenés cuenta? <a href="{{ path('app_login') }}"><u>Ingresá</u></a></p>
+        <p class="muted"><span class="req">*</span> Campos obligatorios · ¿Ya tenés cuenta? <a href="{{ target_path ? path('app_login') ~ '?' ~ {_target_path: target_path}|url_encode : path('app_login') }}"><u>Ingresá</u></a></p>
     {{ form_end(registrationForm) }}
 </div>
 {% endblock %}

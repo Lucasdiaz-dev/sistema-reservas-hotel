@@ -3,8 +3,6 @@
 {% block title %}Iniciar sesión · Hotel Litoral{% endblock %}
 
 {% block body %}
-{% set destino = app.session.get('_security.main.target_path')|default('') %}
-
 <div class="crumbs">Inicio › Iniciar sesión</div>
 <div class="auth">
     <div class="art">
@@ -14,8 +12,8 @@
             <p class="muted">Ingresá para reservar, ver tus reservas o administrar el hotel.</p>
         </div>
     </div>
-    <form method="post" novalidate>
-        {% if '/reservar' in destino %}
+    <form method="post" action="{{ path('app_login') }}" novalidate>
+        {% if continue_reservation %}
             <div class="flash info">Iniciá sesión para continuar con tu reserva.</div>
         {% endif %}
         <h1 style="margin:0">Iniciar sesión</h1>
@@ -31,8 +29,11 @@
             <input type="password" name="_password" id="password" placeholder="••••••••" autocomplete="current-password" required>
         </div>
         <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+        {% if target_path %}
+            <input type="hidden" name="_target_path" value="{{ target_path }}">
+        {% endif %}
         <button class="btn dark block" type="submit">Ingresar</button>
-        <p class="muted">¿No tenés cuenta? <a href="{{ path('app_register') }}"><u>Registrate</u></a></p>
+        <p class="muted">¿No tenés cuenta? <a href="{{ continue_reservation ? path('app_register') ~ '?' ~ {_target_path: target_path}|url_encode : path('app_register') }}"><u>Registrate</u></a></p>
     </form>
 </div>
 {% endblock %}

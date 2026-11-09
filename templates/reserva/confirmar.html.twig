@@ -2,6 +2,11 @@
 
 {% block title %}Confirmar reserva · Hotel Litoral{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {{ turbo_exempts_page_from_cache() }}
+{% endblock %}
+
 {% block body %}
 {% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
 {% set dias = {Mon: 'lun', Tue: 'mar', Wed: 'mié', Thu: 'jue', Fri: 'vie', Sat: 'sáb', Sun: 'dom'} %}
