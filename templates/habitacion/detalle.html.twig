@@ -18,7 +18,8 @@
 <div class="crumbs">Inicio › Buscar › Habitación {{ habitacion.numero }}</div>
 <div class="detail">
     <div>
-        <div class="gallery{{ imagenes|length >= 4 ? ' g4' }}">
+        {# Hash links must bypass Turbo so the CSS :target lightbox can open. #}
+        <div class="gallery{{ imagenes|length >= 4 ? ' g4' }}" data-turbo="false">
             {% for imagen in imagenes %}
                 <figure class="{{ loop.first ? 'main' }}">
                     <a href="#foto-{{ loop.index }}"><img src="{{ asset('img/habitaciones/' ~ imagen.ruta) }}" alt="Foto {{ loop.index }}"></a>
@@ -34,7 +35,7 @@
         {% for imagen in imagenes %}
             {% set anterior = loop.first ? imagenes|length : loop.index - 1 %}
             {% set siguiente = loop.last ? 1 : loop.index + 1 %}
-            <div class="lightbox" id="foto-{{ loop.index }}">
+            <div class="lightbox" id="foto-{{ loop.index }}" data-turbo="false">
                 <a class="lb-bg" href="#"></a>
                 <div class="lb-box">
                     <img src="{{ asset('img/habitaciones/' ~ imagen.ruta) }}" alt="Foto {{ loop.index }}">

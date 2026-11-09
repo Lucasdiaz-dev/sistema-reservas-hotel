@@ -1,22 +1,56 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Registro · Hotel Litoral{% endblock %}
 
 {% block body %}
-    <h1>Register</h1>
-
-    {{ form_errors(registrationForm) }}
-
+<div class="crumbs">Inicio › Registro</div>
+<div class="auth">
+    <div class="art">
+        <img src="{{ asset('img/banner1.jpg') }}" alt="">
+        <div class="darkcard">
+            <b style="font-size:20px">Creá tu cuenta</b>
+            <p class="muted">Con tu email vas a poder reservar y seguir tus reservas.</p>
+        </div>
+    </div>
     {{ form_start(registrationForm) }}
-        {{ form_row(registrationForm.email) }}
-        {{ form_row(registrationForm.nombre) }}
-        {{ form_row(registrationForm.apellido) }}
-        {{ form_row(registrationForm.telefono) }}
-        {{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
-        {{ form_row(registrationForm.agreeTerms) }}
-
-        <button type="submit" class="btn">Register</button>
+        <h1 style="margin:0">Registro</h1>
+        {% for error in registrationForm.vars.errors %}
+            <div class="flash error">{{ error.message }}</div>
+        {% endfor %}
+        <div class="form2">
+            <div>
+                <label for="{{ registrationForm.nombre.vars.id }}">Nombre <span class="req">*</span></label>
+                {{ form_widget(registrationForm.nombre, {attr: {placeholder: 'Lucas'}}) }}
+                {% for error in registrationForm.nombre.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
+            </div>
+            <div>
+                <label for="{{ registrationForm.apellido.vars.id }}">Apellido <span class="req">*</span></label>
+                {{ form_widget(registrationForm.apellido, {attr: {placeholder: 'Díaz'}}) }}
+                {% for error in registrationForm.apellido.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
+            </div>
+        </div>
+        <div>
+            <label for="{{ registrationForm.email.vars.id }}">Email <span class="req">*</span></label>
+            {{ form_widget(registrationForm.email, {attr: {placeholder: 'tu@email.com'}}) }}
+            {% for error in registrationForm.email.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
+        </div>
+        <div>
+            <label for="{{ registrationForm.telefono.vars.id }}">Teléfono <span class="req">*</span></label>
+            {{ form_widget(registrationForm.telefono, {attr: {placeholder: '342 555-1234'}}) }}
+            {% for error in registrationForm.telefono.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
+        </div>
+        <div>
+            <label for="{{ registrationForm.plainPassword.vars.id }}">Contraseña <span class="req">*</span></label>
+            {{ form_widget(registrationForm.plainPassword) }}
+            {% for error in registrationForm.plainPassword.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
+        </div>
+        <label class="check" for="{{ registrationForm.agreeTerms.vars.id }}">
+            {{ form_widget(registrationForm.agreeTerms) }}
+            Acepto los términos <span class="req">*</span>
+        </label>
+        {% for error in registrationForm.agreeTerms.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
+        <button class="btn dark block" type="submit">Crear cuenta</button>
+        <p class="muted"><span class="req">*</span> Campos obligatorios · ¿Ya tenés cuenta? <a href="{{ path('app_login') }}"><u>Ingresá</u></a></p>
     {{ form_end(registrationForm) }}
+</div>
 {% endblock %}

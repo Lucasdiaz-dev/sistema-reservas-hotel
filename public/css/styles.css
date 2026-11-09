@@ -572,15 +572,23 @@ img.thumb {
 }
 .hero {
   position: relative;
-  height: 260px;
+  height: 440px;
   border-radius: var(--r-lg);
   overflow: hidden;
   margin-bottom: 16px;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(20, 20, 30, 0.38), rgba(20, 20, 30, 0.12) 46%, rgba(20, 20, 30, 0.08));
+  pointer-events: none;
 }
 .hero h1 {
   position: absolute;
   left: 28px;
   bottom: 14px;
+  z-index: 1;
   color: #fff;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
   font-size: 36px;
@@ -712,6 +720,17 @@ details summary {
   box-shadow: 0 12px 30px rgba(20, 20, 30, 0.12);
   text-align: left;
   font-size: 14px;
+  white-space: normal;
+}
+/* The actions cell is nowrap. Anchor the panel to the cell so it wraps inside it. */
+.table td:last-child {
+  position: relative;
+}
+.table details.confirm {
+  position: static;
+}
+.table .confirmbox {
+  width: min(340px, 100%);
 }
 .confirmbox .row {
   gap: 8px;
