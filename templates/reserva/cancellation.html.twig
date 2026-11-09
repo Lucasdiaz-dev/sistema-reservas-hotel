@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{% if reserva.estado.value == 'CANCELADA' %}Reserva cancelada{% else %}Cancelación solicitada{% endif %} · Hotel Litoral{% endblock %}
+
+{% block body %}
+{% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
+{% set meses = {
+    '1': 'enero', '2': 'febrero', '3': 'marzo', '4': 'abril',
+    '5': 'mayo', '6': 'junio', '7': 'julio', '8': 'agosto',
+    '9': 'septiembre', '10': 'octubre', '11': 'noviembre', '12': 'diciembre'
+} %}
+{% set habitacion = reserva.habitacion %}
+{% set portada = null %}
+{% for imagen in habitacion.imagenHabitacions %}
+    {% if imagen.portada and portada is null %}
+        {% set portada = imagen %}
+    {% endif %}
+{% endfor %}
+{% if reserva.fechaIngreso|date('Y-m') == reserva.fechaEgreso|date('Y-m') %}
+    {% set periodo = reserva.fechaIngreso|date('j') ~ ' – ' ~ reserva.fechaEgreso|date('j') ~ ' de ' ~ meses[reserva.fechaIngreso|date('n')] ~ ' de ' ~ reserva.fechaIngreso|date('Y') %}
+{% elseif reserva.fechaIngreso|date('Y') == reserva.fechaEgreso|date('Y') %}
+    {% set periodo = reserva.fechaIngreso|date('j') ~ ' de ' ~ meses[reserva.fechaIngreso|date('n')] ~ ' – ' ~ reserva.fechaEgreso|date('j') ~ ' de ' ~ meses[reserva.fechaEgreso|date('n')] ~ ' de ' ~ reserva.fechaIngreso|date('Y') %}
+{% else %}
+    {% set periodo = reserva.fechaIngreso|date('j') ~ ' de ' ~ meses[reserva.fechaIngreso|date('n')] ~ ' de ' ~ reserva.fechaIngreso|date('Y') ~ ' – ' ~ reserva.fechaEgreso|date('j') ~ ' de ' ~ meses[reserva.fechaEgreso|date('n')] ~ ' de ' ~ reserva.fechaEgreso|date('Y') %}
+{% endif %}
+
+<div class="crumbs">Inicio › Cancelación</div>
+<section class="pendwrap">
+    <article class="pendcard">
+        <div class="pph">
+            {% if portada %}
+                <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="">
+            {% endif %}
+            {% include 'reserva/_estado.html.twig' with {estado: reserva.estado.value} %}
+        </div>
+        <h3>Habitación {{ habitacion.numero }} · {{ tipoNombre[habitacion.tipo.value] }}</h3>
+        <div class="tdates">{{ periodo }}</div>
+        <div class="pbot">{{ reserva.cantidadHuespedes }} {{ reserva.cantidadHuespedes == 1 ? 'huésped' : 'huéspedes' }}<br>${{ reserva.total|number_format(0, ',', '.') }} total</div>
+    </article>
+    <div class="pendtxt">
+        {% if reserva.estado.value == 'CANCELADA' %}
+            <h1>Tu reserva fue cancelada</h1>
+        {% else %}
+            <h1>Solicitaste la cancelación</h1>
+            <p>Falta la confirmación del hotel.</p>
+        {% endif %}
+        <a class="btn dark" href="{{ path('app_mis_reservas') }}">Volver a Mis reservas</a>
+    </div>
+</section>
+{% endblock %}

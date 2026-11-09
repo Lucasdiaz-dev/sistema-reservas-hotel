@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Enum\EstadoReserva;
 use App\Manager\ReservaManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,6 +13,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class ReservaController extends AbstractController
 {
+    private const CANCELLATION_RESULTS = 'reservation_cancellation_results';
+
     private ReservaManager $reservaManager;
 
     public function __construct(ReservaManager $reservaManager)
@@ -145,7 +148,7 @@ class ReservaController extends AbstractController
         }
 
         try {
-            $mensaje = $this->reservaManager->cancelarPorCliente($reserva);
+            $this->reservaManager->cancelarPorCliente($reserva);
         } catch (\InvalidArgumentException $e) {
             $this->addFlash('success', $e->getMessage());
 
@@ -156,9 +159,42 @@ class ReservaController extends AbstractController
             return $this->redirectToRoute('app_mis_reservas');
         }
 
-        $this->addFlash('success', $mensaje);
+        $estado = $reserva->getEstado();
+        if ($estado !== EstadoReserva::CANCELADA && $estado !== EstadoReserva::CANCELACION_PENDIENTE) {
+            return $this->redirectToRoute('app_mis_reservas');
+        }
 
-        return $this->redirectToRoute('app_mis_reservas');
+        $this->rememberCancellation($request, $reserva->getId(), $estado);
+
+        return $this->redirectToRoute('app_reserva_cancellation', ['id' => $reserva->getId()]);
+    }
+
+    #[Route('/reservas/{id}/cancelacion', name: 'app_reserva_cancellation', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function cancellation(int $id, Request $request): Response
+    {
+        $reserva = $this->reservaManager->obtenerReserva($id);
+        $usuario = $this->getUser();
+
+        if ($reserva === null) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$usuario instanceof User || $reserva->getUsuario()?->getId() !== $usuario->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $estado = $reserva->getEstado();
+        $guardado = $this->cancellationResult($request, $id);
+        $resultadoValido = $estado === EstadoReserva::CANCELADA || $estado === EstadoReserva::CANCELACION_PENDIENTE;
+
+        if ($guardado === null || $estado === null || $guardado !== $estado || !$resultadoValido) {
+            return $this->redirectToRoute('app_mis_reservas');
+        }
+
+        return $this->render('reserva/cancellation.html.twig', [
+            'reserva' => $reserva,
+        ]);
     }
 
     private function fechaDeConsulta(mixed $valor): ?\DateTimeImmutable
@@ -191,5 +227,35 @@ class ReservaController extends AbstractController
         }
 
         return $parametros;
+    }
+
+    /**
+     * Ties the result screen to this session's successful cancellation.
+     * Reading it does not repeat the POST.
+     */
+    private function rememberCancellation(Request $request, ?int $id, EstadoReserva $estado): void
+    {
+        if ($id === null) {
+            return;
+        }
+
+        $session = $request->getSession();
+        $results = $session->get(self::CANCELLATION_RESULTS, []);
+        if (!\is_array($results)) {
+            $results = [];
+        }
+
+        $results[$id] = $estado->value;
+        $session->set(self::CANCELLATION_RESULTS, $results);
+    }
+
+    private function cancellationResult(Request $request, int $id): ?EstadoReserva
+    {
+        $results = $request->getSession()->get(self::CANCELLATION_RESULTS, []);
+        if (!\is_array($results) || !isset($results[$id]) || !\is_string($results[$id])) {
+            return null;
+        }
+
+        return EstadoReserva::tryFrom($results[$id]);
     }
 }

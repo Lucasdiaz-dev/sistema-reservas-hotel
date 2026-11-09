@@ -31,7 +31,7 @@
             {% if portada %}
                 <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="">
             {% endif %}
-            <span class="pill">Pendiente</span>
+            {% include 'reserva/_estado.html.twig' with {estado: 'PENDIENTE'} %}
         </div>
         <h3>Habitación {{ habitacion.numero }} · {{ tipoNombre[habitacion.tipo.value] }}</h3>
         <div class="tdates">{{ periodo }}</div>

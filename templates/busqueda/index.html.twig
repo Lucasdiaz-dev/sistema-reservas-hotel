@@ -51,10 +51,15 @@
                         {% set portada = imagen %}
                     {% endif %}
                 {% endfor %}
-                <article class="room">
+                <a class="room" href="{{ path('app_habitacion_detalle', {
+                    id: habitacion.id,
+                    ingreso: ingreso|date('Y-m-d'),
+                    egreso: egreso|date('Y-m-d'),
+                    huespedes: huespedes
+                }) }}">
                     <div class="ph">
                         {% if portada %}
-                            <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="Portada habitación {{ habitacion.numero }}">
+                            <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="">
                         {% endif %}
                         <span class="tag">Hasta {{ habitacion.capacidadMaxima }} huésp.</span>
                     </div>
@@ -66,15 +71,10 @@
                         <p>{{ habitacion.descripcion }}</p>
                         <div class="row">
                             <span class="price"><b>${{ habitacion.precioPorNoche|number_format(0, ',', '.') }}</b> <span>/ noche</span></span>
-                            <a class="btn" href="{{ path('app_habitacion_detalle', {
-                                id: habitacion.id,
-                                ingreso: ingreso|date('Y-m-d'),
-                                egreso: egreso|date('Y-m-d'),
-                                huespedes: huespedes
-                            }) }}">Ver habitación</a>
+                            <span class="btn">Ver habitación</span>
                         </div>
                     </div>
-                </article>
+                </a>
             {% endfor %}
         </div>
     {% endif %}
