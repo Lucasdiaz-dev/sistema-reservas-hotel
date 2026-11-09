@@ -52,14 +52,15 @@ class ReservaManager
 
     /**
      * Reservas del panel, para el período pedido (CU008).
+     * El estado es opcional y se combina con el período.
      *
      * @return Reserva[]
      */
-    public function buscarPorPeriodo(\DateTimeImmutable $desde, \DateTimeImmutable $hasta): array
+    public function buscarPorPeriodo(\DateTimeImmutable $desde, \DateTimeImmutable $hasta, ?EstadoReserva $estado = null): array
     {
         $this->validarPeriodo($desde, $hasta);
 
-        return $this->reservaRepository->buscarPorPeriodo($this->sinHora($desde), $this->sinHora($hasta));
+        return $this->reservaRepository->buscarPorPeriodo($this->sinHora($desde), $this->sinHora($hasta), $estado);
     }
 
     /**

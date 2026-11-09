@@ -23,7 +23,6 @@ class ReservaController extends AbstractController
     }
 
     #[Route('/habitacion/{id}/reservar', name: 'app_reserva_confirmar', requirements: ['id' => '\d+'], methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
     public function confirmar(int $id, Request $request): Response
     {
         try {
@@ -51,14 +50,27 @@ class ReservaController extends AbstractController
             return $this->redirectToRoute('app_habitacion_detalle', $this->parametrosDeVuelta($habitacion->getId(), $request->query));
         }
 
-        return $this->render('reserva/confirmar.html.twig', [
+        $parametros = [
             'habitacion' => $habitacion,
             'ingreso' => $ingreso,
             'egreso' => $egreso,
             'huespedes' => $cantidad,
             'noches' => $ingreso->diff($egreso)->days,
             'total' => $this->reservaManager->calcularTotal($habitacion, $ingreso, $egreso),
-        ]);
+        ];
+
+        if (!$this->getUser() instanceof User) {
+            $parametros['destino'] = $this->generateUrl('app_reserva_confirmar', [
+                'id' => $habitacion->getId(),
+                'ingreso' => $ingreso->format('Y-m-d'),
+                'egreso' => $egreso->format('Y-m-d'),
+                'huespedes' => $cantidad,
+            ]);
+
+            return $this->noStore($this->render('reserva/steps.html.twig', $parametros));
+        }
+
+        return $this->noStore($this->render('reserva/confirmar.html.twig', $parametros));
     }
 
     #[Route('/habitacion/{id}/reservar', name: 'app_reserva_registrar', requirements: ['id' => '\d+'], methods: ['POST'])]
@@ -195,6 +207,13 @@ class ReservaController extends AbstractController
         return $this->render('reserva/cancellation.html.twig', [
             'reserva' => $reserva,
         ]);
+    }
+
+    private function noStore(Response $response): Response
+    {
+        $response->headers->set('Cache-Control', 'private, no-store');
+
+        return $response;
     }
 
     private function fechaDeConsulta(mixed $valor): ?\DateTimeImmutable

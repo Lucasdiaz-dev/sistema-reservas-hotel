@@ -33,6 +33,37 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
+    /**
+     * Usuarios ordenados por apellido. Si hay texto, coincide parcialmente
+     * con nombre, apellido o email, sin distinguir mayúsculas.
+     *
+     * @return User[]
+     */
+    public function buscarPorNombreOEmail(string $busqueda): array
+    {
+        $consulta = $this->createQueryBuilder('u')
+            ->orderBy('u.apellido', 'ASC')
+            ->addOrderBy('u.nombre', 'ASC')
+            ->addOrderBy('u.id', 'ASC');
+
+        $busqueda = trim($busqueda);
+        if ($busqueda !== '') {
+            $consulta
+                ->andWhere("(LOWER(u.nombre) LIKE :busqueda ESCAPE '!' OR LOWER(u.apellido) LIKE :busqueda ESCAPE '!' OR LOWER(u.email) LIKE :busqueda ESCAPE '!')")
+                ->setParameter('busqueda', $this->patronLike($busqueda));
+        }
+
+        return $consulta->getQuery()->getResult();
+    }
+
+    private function patronLike(string $busqueda): string
+    {
+        $busqueda = mb_strtolower($busqueda);
+        $busqueda = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $busqueda);
+
+        return '%'.$busqueda.'%';
+    }
+
     //    /**
     //     * @return User[] Returns an array of User objects
     //     */

@@ -44,12 +44,13 @@ class ReservaRepository extends ServiceEntityRepository
     /**
      * Reservas cuyo período se cruza con el filtro del admin (CU008).
      * La estadía ocupa [ingreso, egreso); el filtro incluye desde y hasta.
+     * El estado es opcional: null no filtra por estado.
      *
      * @return Reserva[]
      */
-    public function buscarPorPeriodo(\DateTimeImmutable $desde, \DateTimeImmutable $hasta): array
+    public function buscarPorPeriodo(\DateTimeImmutable $desde, \DateTimeImmutable $hasta, ?EstadoReserva $estado = null): array
     {
-        return $this->createQueryBuilder('r')
+        $consulta = $this->createQueryBuilder('r')
             ->addSelect('u', 'h')
             ->join('r.usuario', 'u')
             ->join('r.habitacion', 'h')
@@ -57,9 +58,15 @@ class ReservaRepository extends ServiceEntityRepository
             ->andWhere('r.fechaEgreso > :desde')
             ->setParameter('desde', $desde)
             ->setParameter('hasta', $hasta)
-            ->orderBy('r.fechaIngreso', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('r.fechaIngreso', 'ASC');
+
+        if ($estado !== null) {
+            $consulta
+                ->andWhere('r.estado = :estado')
+                ->setParameter('estado', $estado);
+        }
+
+        return $consulta->getQuery()->getResult();
     }
 
     /** @return Reserva[] */

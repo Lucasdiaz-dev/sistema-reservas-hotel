@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Registro · Hotel Litoral{% endblock %}
+{% block title %}Registrarse{% endblock %}
 
 {% block body %}
 <div class="crumbs">Inicio › Registro</div>
@@ -12,7 +12,7 @@
             <p class="muted">Con tu email vas a poder reservar y seguir tus reservas.</p>
         </div>
     </div>
-    {{ form_start(registrationForm) }}
+    {{ form_start(registrationForm, {action: target_path ? path('app_register') ~ '?' ~ {_target_path: target_path}|url_encode : path('app_register'), attr: {novalidate: 'novalidate'}}) }}
         <h1 style="margin:0">Registro</h1>
         {% for error in registrationForm.vars.errors %}
             <div class="flash error">{{ error.message }}</div>
@@ -40,8 +40,14 @@
             {% for error in registrationForm.telefono.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
         </div>
         <div>
-            <label for="{{ registrationForm.plainPassword.vars.id }}">Contraseña <span class="req">*</span></label>
-            {{ form_widget(registrationForm.plainPassword) }}
+            <label for="{{ registrationForm.plainPassword.first.vars.id }}">Contraseña <span class="req">*</span></label>
+            {{ form_widget(registrationForm.plainPassword.first) }}
+            {% for error in registrationForm.plainPassword.first.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
+        </div>
+        <div>
+            <label for="{{ registrationForm.plainPassword.second.vars.id }}">Repetir contraseña <span class="req">*</span></label>
+            {{ form_widget(registrationForm.plainPassword.second) }}
+            {% for error in registrationForm.plainPassword.second.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
             {% for error in registrationForm.plainPassword.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
         </div>
         <label class="check" for="{{ registrationForm.agreeTerms.vars.id }}">
@@ -50,7 +56,7 @@
         </label>
         {% for error in registrationForm.agreeTerms.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
         <button class="btn dark block" type="submit">Crear cuenta</button>
-        <p class="muted"><span class="req">*</span> Campos obligatorios · ¿Ya tenés cuenta? <a href="{{ path('app_login') }}"><u>Ingresá</u></a></p>
+        <p class="muted"><span class="req">*</span> Campos obligatorios · ¿Ya tenés cuenta? <a href="{{ target_path ? path('app_login') ~ '?' ~ {_target_path: target_path}|url_encode : path('app_login') }}"><u>Ingresá</u></a></p>
     {{ form_end(registrationForm) }}
 </div>
 {% endblock %}

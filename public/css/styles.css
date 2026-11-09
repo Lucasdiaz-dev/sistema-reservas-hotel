@@ -185,6 +185,10 @@ textarea {
   gap: 14px;
   align-items: end;
 }
+.searchbar > div,
+.searchbar select {
+  min-width: 0;
+}
 .chips {
   display: flex;
   gap: 6px;
@@ -465,6 +469,66 @@ textarea {
 .flash.error {
   color: var(--bad);
 }
+.flash-anchor {
+  position: relative;
+  height: 0;
+  z-index: 30;
+}
+.flash-stack {
+  position: absolute;
+  top: 12px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  width: min(360px, 100%);
+  pointer-events: none;
+}
+.flash-toast {
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: var(--r);
+  box-shadow: 0 8px 24px rgba(20, 20, 30, 0.12);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  animation:
+    flash-in 180ms ease both,
+    flash-out 200ms ease 3s forwards,
+    flash-hide 0s linear 3.2s forwards;
+}
+@keyframes flash-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes flash-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes flash-hide {
+  to {
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flash-toast {
+    opacity: 1;
+    animation: flash-hide 0s linear 3s forwards;
+  }
+}
 .list {
   display: flex;
   flex-direction: column;
@@ -514,6 +578,58 @@ textarea {
 }
 .form .full {
   grid-column: 1/-1;
+}
+.user-modal {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 22px;
+  border: 0;
+  border-radius: var(--r);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 48px rgba(20, 20, 30, 0.18);
+  overflow: auto;
+}
+.user-modal::backdrop {
+  background: rgba(20, 20, 30, 0.4);
+}
+.user-modal h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+.user-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.user-form .full {
+  grid-column: 1 / -1;
+}
+.user-form > div {
+  min-width: 0;
+}
+.user-form input[type="hidden"] {
+  display: none;
+}
+.user-form ul {
+  list-style: none;
+  color: var(--bad);
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 6px;
+}
+.user-form [aria-invalid="true"] {
+  border-color: var(--bad);
+}
+.user-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+.user-modal-actions .btn {
+  width: auto;
 }
 .toolbar {
   display: flex;
@@ -757,6 +873,15 @@ details summary {
   margin-top: 10px;
 }
 /* visor de imágenes (admin) */
+.imgtools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.user-modal.picker {
+  width: min(860px, calc(100vw - 32px));
+}
 details.visor summary {
   list-style: none;
   display: inline-flex;
@@ -1139,6 +1264,36 @@ details.visor summary::-webkit-details-marker {
 .pendtxt .btn {
   padding: 12px 26px;
 }
+.reserve-steps {
+  margin: 0 0 22px;
+  padding-left: 1.15em;
+  max-width: 340px;
+  color: #333;
+}
+.reserve-steps li + li {
+  margin-top: 8px;
+}
+.reserve-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.welcomelogo {
+  width: 320px;
+  height: 470px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.welcomelogo img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
 @media (max-width: 700px) {
   .trip {
     grid-template-columns: 1fr;
@@ -1160,6 +1315,18 @@ details.visor summary::-webkit-details-marker {
   .pendtxt h1 {
     font-size: 30px;
   }
+  .pendwrap.welcome {
+    align-items: center;
+  }
+  .welcomelogo {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+  }
+  .welcomelogo img {
+    width: 100%;
+    height: auto;
+  }
 }
 
 /* ---- v1.5: mobile (visitante / cliente). Solo dentro de este media query: el desktop no cambia. ---- */
@@ -1179,6 +1346,15 @@ details.visor summary::-webkit-details-marker {
     border-radius: 0;
     box-shadow: none;
     padding: 12px 16px 96px;
+  }
+  .flash-stack {
+    left: 0;
+    right: 0;
+    width: auto;
+    align-items: stretch;
+  }
+  .flash-toast {
+    width: auto;
   }
   /* header compacto: marca a la izquierda, usuario a la derecha */
   .top {
@@ -1404,6 +1580,23 @@ details.visor summary::-webkit-details-marker {
   .auth form .btn {
     width: 100%;
   }
+  .imgtools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .user-modal,
+  .user-modal.picker {
+    width: calc(100vw - 32px);
+    max-width: none;
+    max-height: calc(100dvh - 120px);
+    padding: 18px 16px 16px;
+  }
+  .user-modal.picker .pickgrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .user-form {
+    grid-template-columns: 1fr;
+  }
   /* mis reservas */
   .tripsh {
     font-size: 26px;
@@ -1420,13 +1613,34 @@ details.visor summary::-webkit-details-marker {
   .pendtxt .btn {
     min-height: 48px;
   }
+  .reserve-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .reserve-actions .btn {
+    width: 100%;
+  }
+  .pendwrap.welcome {
+    flex-direction: column;
+    align-items: center;
+  }
+  .welcomelogo {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+  }
+  .welcomelogo img {
+    width: 100%;
+    height: auto;
+  }
   footer {
     margin: 24px 0 0;
   }
   .searchbar > div {
     min-width: 0;
   }
-  .searchbar input {
+  .searchbar input,
+  .searchbar select {
     min-width: 0;
     padding: 11px 8px;
   }

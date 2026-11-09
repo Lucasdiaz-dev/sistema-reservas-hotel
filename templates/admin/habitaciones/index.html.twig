@@ -1,5 +1,7 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}Habitaciones{% endblock %}
+
 {% block body %}
     <div class="crumbs">Admin › Habitaciones</div>
 
@@ -10,10 +12,6 @@
             + Nueva habitación
         </a>
     </div>
-
-    {% for message in app.flashes('success') %}
-        <p class="muted">{{ message }}</p>
-    {% endfor %}
 
     <table class="table">
         <thead>

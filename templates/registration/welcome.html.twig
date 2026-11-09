@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bienvenida{% endblock %}
+
+{% block body %}
+<div class="crumbs">Inicio › Bienvenida</div>
+<section class="pendwrap welcome">
+    <div class="welcomelogo">
+        <img src="{{ asset('img/hotel-litoral-ovalo.svg') }}" alt="Hotel Litoral">
+    </div>
+    <div class="pendtxt">
+        <h1>¡Bienvenido/a, {{ nombre }}!</h1>
+        <p>Tu cuenta se creó correctamente. Ya podés buscar habitaciones y hacer tu reserva.</p>
+        <a class="btn dark" href="{{ path('app_busqueda') }}">Empezar a buscar</a>
+    </div>
+</section>
+{% endblock %}

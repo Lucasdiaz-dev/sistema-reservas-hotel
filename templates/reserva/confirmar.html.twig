@@ -1,6 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Confirmar reserva · Hotel Litoral{% endblock %}
+{% block title %}Confirmar reserva{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ turbo_exempts_page_from_cache() }}
+{% endblock %}
 
 {% block body %}
 {% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}

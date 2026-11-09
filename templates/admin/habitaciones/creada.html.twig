@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Habitación creada{% endblock %}
+
+{% block body %}
+{% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
+{% set portada = null %}
+{% for imagen in habitacion.imagenHabitacions %}
+    {% if imagen.portada and portada is null %}
+        {% set portada = imagen %}
+    {% endif %}
+{% endfor %}
+
+<div class="crumbs">Admin › Habitaciones › Habitación creada</div>
+<section class="pendwrap">
+    <article class="pendcard">
+        <div class="pph">
+            {% if portada %}
+                <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="Portada de la habitación {{ habitacion.numero }}">
+            {% endif %}
+        </div>
+        <h3>Habitación {{ habitacion.numero }} · {{ tipoNombre[habitacion.tipo.value] }}</h3>
+        <div class="pbot">
+            <span class="stars" title="{{ habitacion.estrellas }} estrellas">{% for i in 1..habitacion.estrellas %}★{% endfor %}</span><br>
+            Hasta {{ habitacion.capacidadMaxima }} {{ habitacion.capacidadMaxima == 1 ? 'huésped' : 'huéspedes' }}<br>
+            ${{ habitacion.precioPorNoche|number_format(0, ',', '.') }} / noche
+        </div>
+    </article>
+    <div class="pendtxt">
+        <h1>Habitación creada correctamente</h1>
+        <p>Quedó registrada la habitación {{ habitacion.numero }}, de tipo {{ tipoNombre[habitacion.tipo.value] }}.</p>
+        <a class="btn dark" href="{{ path('admin_habitaciones') }}">Volver a habitaciones</a>
+    </div>
+</section>
+{% endblock %}
