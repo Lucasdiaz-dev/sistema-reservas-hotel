@@ -1,0 +1,12 @@
+{% set flashes = app.flashes %}
+{% if flashes %}
+    <div class="flash-anchor">
+        <div class="flash-stack">
+            {% for type, messages in flashes %}
+                {% for message in messages %}
+                    <p class="flash-toast"{% if type == 'error' %} role="alert"{% else %} role="status"{% endif %}>{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}

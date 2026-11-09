@@ -3,12 +3,6 @@
 {% block body %}
     <div class="crumbs">Admin › Usuarios</div>
     <div class="toolbar"><h1>Usuarios</h1></div>
-    {% for mensaje in app.flashes('success') %}
-        <p class="muted">{{ mensaje }}</p>
-    {% endfor %}
-    {% for mensaje in app.flashes('error') %}
-        <p class="muted">{{ mensaje }}</p>
-    {% endfor %}
     <table class="table">
         <thead><tr><th>Nombre</th><th>Apellido</th><th>Email</th><th>Teléfono</th><th>Rol</th><th>Editar</th></tr></thead>
         <tbody>

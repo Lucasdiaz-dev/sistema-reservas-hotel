@@ -23,12 +23,8 @@
     <body>
         <div class="shell"><div class="frame">
                 {% include '_header.html.twig' %}
+                {% include '_flashes.html.twig' %}
                 <main>
-                    {% for messages in app.flashes %}
-                        {% for message in messages %}
-                            <p class="muted">{{ message }}</p>
-                        {% endfor %}
-                    {% endfor %}
                     {% block body %}{% endblock %}
                 </main>
             </div></div>
