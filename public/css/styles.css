@@ -813,6 +813,15 @@ details summary {
   margin-top: 10px;
 }
 /* visor de imágenes (admin) */
+.imgtools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.user-modal.picker {
+  width: min(860px, calc(100vw - 32px));
+}
 details.visor summary {
   list-style: none;
   display: inline-flex;
@@ -1502,11 +1511,19 @@ details.visor summary::-webkit-details-marker {
   .auth form .btn {
     width: 100%;
   }
-  .user-modal {
+  .imgtools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .user-modal,
+  .user-modal.picker {
     width: calc(100vw - 32px);
     max-width: none;
     max-height: calc(100dvh - 120px);
     padding: 18px 16px 16px;
+  }
+  .user-modal.picker .pickgrid {
+    grid-template-columns: repeat(2, 1fr);
   }
   .user-form {
     grid-template-columns: 1fr;

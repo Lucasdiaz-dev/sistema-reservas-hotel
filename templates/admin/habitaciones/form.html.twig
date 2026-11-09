@@ -8,7 +8,8 @@
     {{ form_start(formulario, {
         'attr': {
             'class': 'form',
-            'novalidate': 'novalidate'
+            'novalidate': 'novalidate',
+            'enctype': 'multipart/form-data'
         }
     }) }}
 
@@ -81,55 +82,61 @@
                 <h2>Imágenes</h2>
             </div>
 
-            <details class="visor" open>
-                <summary class="btn">Elegir imágenes</summary>
+            <div class="imgtools">
+                <button type="button" class="btn" data-imagen-abrir="elegir">Elegir imágenes</button>
+                <button type="button" class="btn" data-imagen-abrir="imagen">Subir nuevas imágenes</button>
+            </div>
 
-                <div class="visorpanel">
-                    <div class="row">
-                        <b>Imágenes disponibles · public/img/habitaciones/</b>
-                    </div>
-
-                    <div class="pickgrid">
-                        {% for archivo in imagenesDisponibles %}
-                            <label class="pick">
-                                <input
-                                    id="seleccion-{{ loop.index }}"
-                                    type="checkbox"
-                                    name="sel[]"
-                                    value="{{ archivo }}"
-                                    {% if archivo in seleccionadas %}
-                                        checked
-                                    {% endif %}
-                                >
-
-                                <img
-                                    src="{{ asset('img/habitaciones/' ~ archivo) }}"
-                                    alt="{{ archivo }}"
-                                >
-
-                                <span>{{ archivo }}</span>
-                            </label>
-                        {% else %}
-                            <p class="muted">No hay imágenes disponibles.</p>
-                        {% endfor %}
-                    </div>
-
-                    <p class="help">
-                        Marcá las imágenes y actualizá la selección para elegir la portada.
-                        Para quitar una imagen, desmarcala y actualizá la selección.
-                    </p>
-
-                    <button
-                        id="actualizar-imagenes"
-                        type="submit"
-                        name="accion"
-                        value="actualizar"
-                        class="btn"
-                    >
-                        Aceptar
-                    </button>
+            <dialog class="user-modal picker" id="modal-elegir" aria-labelledby="modal-elegir-titulo">
+                <h2 id="modal-elegir-titulo">Elegir imágenes</h2>
+                <div class="pickgrid">
+                    {% for archivo in imagenesDisponibles %}
+                        <label class="pick">
+                            <input
+                                id="seleccion-{{ loop.index }}"
+                                type="checkbox"
+                                name="sel[]"
+                                value="{{ archivo }}"
+                                {% if archivo in seleccionadas %}
+                                    checked
+                                {% endif %}
+                            >
+                            <img
+                                src="{{ asset('img/habitaciones/' ~ archivo) }}"
+                                alt="{{ archivo }}"
+                            >
+                            <span>{{ archivo }}</span>
+                        </label>
+                    {% else %}
+                        <p class="muted">No hay imágenes disponibles.</p>
+                    {% endfor %}
                 </div>
-            </details>
+                <p class="help">Marcá las imágenes y presioná Aceptar para elegir la portada.</p>
+                <div class="user-modal-actions">
+                    <button class="btn" type="button" data-imagen-cerrar>Cancelar</button>
+                    <button id="actualizar-imagenes" class="btn dark" type="submit" name="accion" value="actualizar">Aceptar</button>
+                </div>
+            </dialog>
+
+            <dialog class="user-modal" id="modal-imagen" aria-labelledby="modal-imagen-titulo"{% if errorSubida %} data-open-on-load{% endif %}>
+                <h2 id="modal-imagen-titulo">Subir nuevas imágenes</h2>
+                <label for="imagen-habitacion">Foto</label>
+                <input type="hidden" name="MAX_FILE_SIZE" value="{{ tamanoMaximo }}">
+                <input
+                    id="imagen-habitacion"
+                    type="file"
+                    name="imagen"
+                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                >
+                {% if errorSubida %}
+                    <p class="err">{{ errorSubida }}</p>
+                {% endif %}
+                <p class="help">JPG, PNG o WebP. Tamaño máximo: 5 MB.</p>
+                <div class="user-modal-actions">
+                    <button class="btn" type="button" data-imagen-cerrar>Cancelar</button>
+                    <button class="btn dark" type="submit" name="accion" value="subir">Subir imagen</button>
+                </div>
+            </dialog>
 
             <h3>
                 Imágenes asignadas
@@ -195,4 +202,49 @@
         </div>
 
     {{ form_end(formulario) }}
+    <script>
+        (function () {
+            function bindModal(dialog) {
+                if (!dialog) {
+                    return;
+                }
+
+                function openModal() {
+                    if (!dialog.open) {
+                        dialog.showModal();
+                    }
+                    var field = dialog.querySelector("input[type='file']");
+                    if (field) {
+                        field.focus();
+                    }
+                }
+
+                document.querySelectorAll('[data-imagen-abrir="' + dialog.id.replace("modal-", "") + '"]').forEach(function (opener) {
+                    opener.addEventListener("click", openModal);
+                });
+
+                var cerrar = dialog.querySelector("[data-imagen-cerrar]");
+                if (cerrar) {
+                    cerrar.addEventListener("click", function () {
+                        dialog.close();
+                    });
+                }
+
+                dialog.addEventListener("click", function (event) {
+                    var rect = dialog.getBoundingClientRect();
+                    var outside = event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+                    if (outside) {
+                        dialog.close();
+                    }
+                });
+
+                if (dialog.hasAttribute("data-open-on-load")) {
+                    openModal();
+                }
+            }
+
+            bindModal(document.getElementById("modal-elegir"));
+            bindModal(document.getElementById("modal-imagen"));
+        })();
+    </script>
 {% endblock %}
