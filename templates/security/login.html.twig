@@ -5,7 +5,7 @@
 {% block body %}
 {% set destino = app.session.get('_security.main.target_path')|default('') %}
 
-<div class="crumbs">Inicio › Ingresar</div>
+<div class="crumbs">Inicio › Iniciar sesión</div>
 <div class="auth">
     <div class="art">
         <img src="{{ asset('img/banner2.jpg') }}" alt="">
@@ -14,13 +14,13 @@
             <p class="muted">Ingresá para reservar, ver tus reservas o administrar el hotel.</p>
         </div>
     </div>
-    <form method="post">
+    <form method="post" novalidate>
         {% if '/reservar' in destino %}
             <div class="flash info">Iniciá sesión para continuar con tu reserva.</div>
         {% endif %}
         <h1 style="margin:0">Iniciar sesión</h1>
         {% if error %}
-            <div class="flash error">Email o contraseña incorrectos.</div>
+            <div class="flash error">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
         {% endif %}
         <div>
             <label for="username">Email</label>

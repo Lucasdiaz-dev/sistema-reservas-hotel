@@ -1,4 +1,6 @@
 security:
+    # Distinct messages for an unknown account and a wrong password.
+    hide_user_not_found: false
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
