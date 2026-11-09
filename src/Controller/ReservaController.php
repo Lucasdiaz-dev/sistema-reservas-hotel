@@ -161,23 +161,6 @@ class ReservaController extends AbstractController
         return $this->redirectToRoute('app_mis_reservas');
     }
 
-    #[Route('/reservas', name: 'app_mis_reservas', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
-    public function misReservas(): Response
-    {
-        $usuario = $this->getUser();
-        if (!$usuario instanceof User) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $grupos = $this->reservaManager->listarDeUsuario($usuario);
-
-        return $this->render('mis_reservas/index.html.twig', [
-            'proximas' => $grupos['proximas'],
-            'canceladas' => $grupos['canceladas'],
-        ]);
-    }
-
     private function fechaDeConsulta(mixed $valor): ?\DateTimeImmutable
     {
         if (!\is_string($valor) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $valor)) {

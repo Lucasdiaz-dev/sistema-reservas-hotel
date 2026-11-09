@@ -1,77 +1,53 @@
 {% extends 'base.html.twig' %}
-{% import _self as mis %}
 
 {% block title %}Mis reservas · Hotel Litoral{% endblock %}
 
 {% block body %}
-{% set tipoNombre = {SIMPLE: 'Simple', DOBLE: 'Doble', SUITE: 'Suite'} %}
-{% set meses = {
-    '1': 'enero', '2': 'febrero', '3': 'marzo', '4': 'abril',
-    '5': 'mayo', '6': 'junio', '7': 'julio', '8': 'agosto',
-    '9': 'septiembre', '10': 'octubre', '11': 'noviembre', '12': 'diciembre'
-} %}
-{% set pill = {
-    PENDIENTE: 'Pendiente',
-    CONFIRMADA: 'Confirmada',
-    CANCELACION_PENDIENTE: 'Cancelación pendiente',
-    CANCELADA: 'Cancelada'
-} %}
+    <div class="crumbs">Inicio › Mis reservas</div>
+    <h1 class="tripsh">Mis reservas</h1>
+    {% set meses = {1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril', 5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto', 9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'} %}
+    {% set estados = {'PENDIENTE': 'Pendiente', 'CONFIRMADA': 'Confirmada', 'CANCELACION_PENDIENTE': 'Cancelación pendiente', 'CANCELADA': 'Cancelada'} %}
+    {% set proximas = reservas|filter(reserva => reserva.estado.value in ['PENDIENTE', 'CONFIRMADA', 'CANCELACION_PENDIENTE']) %}
+    {% set canceladas = reservas|filter(reserva => reserva.estado.value == 'CANCELADA') %}
 
-<div class="crumbs">Inicio › Mis reservas</div>
-<h1 class="tripsh">Mis reservas</h1>
-
-{% if proximas is empty and canceladas is empty %}
-    <p class="muted">No tenés reservas registradas.</p>
-{% else %}
-    {% if proximas is not empty %}
-        <h2 class="trsec">Próximas</h2>
-        <div class="trips">
-            {% for reserva in proximas %}
-                {{ mis.tarjeta(reserva, tipoNombre, meses, pill) }}
-            {% endfor %}
-        </div>
+    {% if reservas is empty %}
+        <p class="muted">No tenés reservas registradas.</p>
     {% endif %}
-    {% if canceladas is not empty %}
-        <h2 class="trsec">Canceladas</h2>
-        <div class="trips">
-            {% for reserva in canceladas %}
-                {{ mis.tarjeta(reserva, tipoNombre, meses, pill) }}
-            {% endfor %}
-        </div>
-    {% endif %}
-{% endif %}
-{% endblock %}
 
-{% macro tarjeta(reserva, tipoNombre, meses, pill) %}
-    {% set habitacion = reserva.habitacion %}
-    {% set portada = null %}
-    {% for imagen in habitacion.imagenHabitacions %}
-        {% if imagen.portada and portada is null %}
-            {% set portada = imagen %}
+    {% for titulo, lista in {'Próximas': proximas, 'Canceladas': canceladas} %}
+        {% if lista is not empty %}
+            <h2 class="trsec">{{ titulo }}</h2>
+            <div class="trips">
+                {% for reserva in lista %}
+                    {% set ingreso = reserva.fechaIngreso %}
+                    {% set egreso = reserva.fechaEgreso %}
+                    {% set portada = reserva.habitacion.imagenHabitacions|filter(imagen => imagen.portada)|first %}
+                    <article class="trip">
+                        <div class="tinfo">
+                            <h3>Habitación {{ reserva.habitacion.numero }} · {{ reserva.habitacion.tipo.value|lower|capitalize }}</h3>
+                            <div class="tdates">
+                                {% if ingreso|date('Y-m') == egreso|date('Y-m') %}
+                                    {{ ingreso|date('j') }} – {{ egreso|date('j') }} de {{ meses[egreso|date('n')] }} de {{ egreso|date('Y') }}
+                                {% elseif ingreso|date('Y') == egreso|date('Y') %}
+                                    {{ ingreso|date('j') }} de {{ meses[ingreso|date('n')] }} – {{ egreso|date('j') }} de {{ meses[egreso|date('n')] }} de {{ egreso|date('Y') }}
+                                {% else %}
+                                    {{ ingreso|date('j') }} de {{ meses[ingreso|date('n')] }} de {{ ingreso|date('Y') }} – {{ egreso|date('j') }} de {{ meses[egreso|date('n')] }} de {{ egreso|date('Y') }}
+                                {% endif %}
+                            </div>
+                            <div class="tmeta">Reserva #{{ reserva.id }}<br>{{ reserva.cantidadHuespedes }} huésp. · Total ${{ reserva.total|number_format(0, ',', '.') }}</div>
+                            <div class="tact">
+                                {% include 'mis_reservas/_acciones.html.twig' with {reserva: reserva} %}
+                            </div>
+                        </div>
+                        <div class="tph">
+                            {% if portada %}
+                                <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="Habitación {{ reserva.habitacion.numero }}">
+                            {% endif %}
+                            <span class="pill">{{ estados[reserva.estado.value] }}</span>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
         {% endif %}
     {% endfor %}
-    {% if reserva.fechaIngreso|date('Y-m') == reserva.fechaEgreso|date('Y-m') %}
-        {% set periodo = reserva.fechaIngreso|date('j') ~ ' – ' ~ reserva.fechaEgreso|date('j') ~ ' de ' ~ meses[reserva.fechaIngreso|date('n')] ~ ' de ' ~ reserva.fechaIngreso|date('Y') %}
-    {% elseif reserva.fechaIngreso|date('Y') == reserva.fechaEgreso|date('Y') %}
-        {% set periodo = reserva.fechaIngreso|date('j') ~ ' de ' ~ meses[reserva.fechaIngreso|date('n')] ~ ' – ' ~ reserva.fechaEgreso|date('j') ~ ' de ' ~ meses[reserva.fechaEgreso|date('n')] ~ ' de ' ~ reserva.fechaIngreso|date('Y') %}
-    {% else %}
-        {% set periodo = reserva.fechaIngreso|date('j') ~ ' de ' ~ meses[reserva.fechaIngreso|date('n')] ~ ' de ' ~ reserva.fechaIngreso|date('Y') ~ ' – ' ~ reserva.fechaEgreso|date('j') ~ ' de ' ~ meses[reserva.fechaEgreso|date('n')] ~ ' de ' ~ reserva.fechaEgreso|date('Y') %}
-    {% endif %}
-    <article class="trip">
-        <div class="tinfo">
-            <h3>Habitación {{ habitacion.numero }} · {{ tipoNombre[habitacion.tipo.value] }}</h3>
-            <div class="tdates">{{ periodo }}</div>
-            <div class="tmeta">Reserva #{{ reserva.id }}<br>{{ reserva.cantidadHuespedes }} huésp. · Total ${{ reserva.total|number_format(0, ',', '.') }}</div>
-            {# acciones: las hace Lucas (CU013) #}
-            <div class="tact">
-                {% include 'mis_reservas/_acciones.html.twig' with {reserva: reserva} %}
-            </div>
-        </div>
-        <div class="tph">
-            {% if portada %}
-                <img src="{{ asset('img/habitaciones/' ~ portada.ruta) }}" alt="">
-            {% endif %}
-            <span class="pill">{{ pill[reserva.estado.value] }}</span>
-        </div>
-    </article>
-{% endmacro %}
+{% endblock %}

@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Habitacion;
 use App\Entity\Reserva;
+use App\Entity\User;
 use App\Enum\EstadoReserva;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -57,6 +58,21 @@ class ReservaRepository extends ServiceEntityRepository
             ->setParameter('desde', $desde)
             ->setParameter('hasta', $hasta)
             ->orderBy('r.fechaIngreso', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return Reserva[] */
+    public function getReservasDelUsuario(User $usuario): array
+    {
+        return $this->createQueryBuilder('r')
+            ->addSelect('habitacion', 'imagen')
+            ->join('r.habitacion', 'habitacion')
+            ->leftJoin('habitacion.imagenHabitacions', 'imagen')
+            ->andWhere('r.usuario = :usuario')
+            ->setParameter('usuario', $usuario)
+            ->orderBy('r.fechaIngreso', 'ASC')
+            ->addOrderBy('r.id', 'ASC')
             ->getQuery()
             ->getResult();
     }
