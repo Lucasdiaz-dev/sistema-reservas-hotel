@@ -12,7 +12,7 @@
             <p class="muted">Con tu email vas a poder reservar y seguir tus reservas.</p>
         </div>
     </div>
-    {{ form_start(registrationForm) }}
+    {{ form_start(registrationForm, {attr: {novalidate: 'novalidate'}}) }}
         <h1 style="margin:0">Registro</h1>
         {% for error in registrationForm.vars.errors %}
             <div class="flash error">{{ error.message }}</div>
@@ -40,8 +40,14 @@
             {% for error in registrationForm.telefono.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
         </div>
         <div>
-            <label for="{{ registrationForm.plainPassword.vars.id }}">Contraseña <span class="req">*</span></label>
-            {{ form_widget(registrationForm.plainPassword) }}
+            <label for="{{ registrationForm.plainPassword.first.vars.id }}">Contraseña <span class="req">*</span></label>
+            {{ form_widget(registrationForm.plainPassword.first) }}
+            {% for error in registrationForm.plainPassword.first.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
+        </div>
+        <div>
+            <label for="{{ registrationForm.plainPassword.second.vars.id }}">Repetir contraseña <span class="req">*</span></label>
+            {{ form_widget(registrationForm.plainPassword.second) }}
+            {% for error in registrationForm.plainPassword.second.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
             {% for error in registrationForm.plainPassword.vars.errors %}<div class="err">{{ error.message }}</div>{% endfor %}
         </div>
         <label class="check" for="{{ registrationForm.agreeTerms.vars.id }}">

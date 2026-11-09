@@ -14,7 +14,9 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class RegistrationController extends AbstractController
 {
-    #[Route('/register', name: 'app_register')]
+    private const REGISTRATION_WELCOME = 'registration_welcome';
+
+    #[Route('/register', name: 'app_register', methods: ['GET', 'POST'])]
     public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, Security $security, EntityManagerInterface $entityManager): Response
     {
         $user = new User();
@@ -25,19 +27,32 @@ class RegistrationController extends AbstractController
             /** @var string $plainPassword */
             $plainPassword = $form->get('plainPassword')->getData();
 
-            // encode the plain password
             $user->setPassword($userPasswordHasher->hashPassword($user, $plainPassword));
 
             $entityManager->persist($user);
             $entityManager->flush();
 
-            // do anything else you need here, like send an email
+            $security->login($user, 'form_login', 'main');
+            $request->getSession()->set(self::REGISTRATION_WELCOME, true);
 
-            return $security->login($user, 'form_login', 'main');
+            return $this->redirectToRoute('app_bienvenida');
         }
 
         return $this->render('registration/register.html.twig', [
             'registrationForm' => $form,
+        ]);
+    }
+
+    #[Route('/bienvenida', name: 'app_bienvenida', methods: ['GET'])]
+    public function welcome(Request $request): Response
+    {
+        $user = $this->getUser();
+        if (!$request->getSession()->get(self::REGISTRATION_WELCOME) || !$user instanceof User) {
+            return $this->redirectToRoute('app_busqueda');
+        }
+
+        return $this->render('registration/welcome.html.twig', [
+            'nombre' => $user->getNombre(),
         ]);
     }
 }
