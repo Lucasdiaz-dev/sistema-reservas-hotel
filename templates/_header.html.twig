@@ -3,7 +3,7 @@
   <a class="brand" href="{{ path('app_busqueda') }}"><span class="logo"><span class="logo"><img src="{{ asset('img/_logo_puente.svg') }}" alt="Hotel Litoral" style="width:100%;height:100%"></span></span>Hotel Litoral</a>
   <nav class="pillnav">
     {% if is_granted('ROLE_ADMIN') %}
-      <a href="{{ path('admin_reservas') }}"{% if ruta starts with 'admin_reserva' %} class="on"{% endif %}>Reservas</a><a href="{{ path('admin_habitaciones') }}"{% if ruta starts with 'admin_habitacion' %} class="on"{% endif %}>Habitaciones</a><a href="{{ path('admin_usuarios') }}"{% if ruta starts with 'admin_usuario' %} class="on"{% endif %}>Usuarios</a>
+      <a href="{{ path('admin_reservas') }}"{% if ruta starts with 'admin_reserva' %} class="on"{% endif %}>Consultar reservas</a><a href="{{ path('admin_habitaciones') }}"{% if ruta starts with 'admin_habitacion' %} class="on"{% endif %}>Gestionar habitaciones</a><a href="{{ path('admin_usuarios') }}"{% if ruta starts with 'admin_usuario' %} class="on"{% endif %}>Administrar usuarios</a>
     {% else %}
       <a href="{{ path('app_busqueda') }}"{% if ruta == 'app_busqueda' %} class="on"{% endif %}>Buscar</a><a href="{{ path('app_mis_reservas') }}"{% if ruta == 'app_mis_reservas' %} class="on"{% endif %}>Mis reservas</a><a href="{{ path('app_perfil') }}"{% if ruta == 'app_perfil' %} class="on"{% endif %}>Mi perfil</a>
     {% endif %}
