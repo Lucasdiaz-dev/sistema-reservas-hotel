@@ -58,6 +58,7 @@ class HabitacionController extends AbstractController
         $portada = '';
         $errorSubida = null;
         $nombreSubido = null;
+        $coverErrorMessage = null;
 
         if ($formulario->isSubmitted()) {
             $seleccionadas = $this->habitacionManager->filtrarImagenesSeleccionadas(
@@ -86,6 +87,10 @@ class HabitacionController extends AbstractController
 
                 if ($errorImagenes !== null) {
                     $formulario->addError(new FormError($errorImagenes));
+                    if ($errorImagenes === 'Debe marcar una portada.') {
+                        $coverErrorMessage = $errorImagenes;
+                        $this->addFlash('error', $errorImagenes);
+                    }
                 }
 
                 if ($formulario->isValid()) {
@@ -129,6 +134,7 @@ class HabitacionController extends AbstractController
             'seleccionadas' => $seleccionadas,
             'portada' => $portada,
             'errorSubida' => $errorSubida,
+            'coverErrorMessage' => $coverErrorMessage,
             'tamanoMaximo' => HabitacionManager::TAMANO_MAXIMO_BYTES,
         ], $respuesta);
     }

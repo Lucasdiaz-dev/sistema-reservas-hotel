@@ -15,9 +15,15 @@
         }
     }) }}
 
-        {% if formulario.vars.errors|length > 0 %}
+        {% set coverErrorMessage = coverErrorMessage|default(null) %}
+        {% set inlineErrors = formulario.vars.errors|filter(error => coverErrorMessage is null or error.message != coverErrorMessage) %}
+        {% if inlineErrors|length > 0 %}
             <div class="full">
-                {{ form_errors(formulario) }}
+                <ul>
+                    {% for error in inlineErrors %}
+                        <li>{{ error.message }}</li>
+                    {% endfor %}
+                </ul>
             </div>
         {% endif %}
 
