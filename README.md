@@ -92,16 +92,16 @@ php bin/console doctrine:fixtures:load
 
 ### Instalación en Windows (Laragon)
 
-1. Abrí la **terminal de Laragon** y elegí una versión de PHP **8.4+** (Menú → PHP).
-2. Cloná el repo dentro de la carpeta `www` de Laragon (por ejemplo `C:\laragon\www\sistema-reservas-hotel`).
-3. En esa carpeta: `composer install`.
-4. Creá `.env.local` con MySQL de Laragon (usuario `root` sin contraseña por defecto):
+1. Elegí PHP **8.4+** en el menú de Laragon (Menú → PHP). El `composer.lock` exige esa versión, aunque `composer.json` diga `>=8.1`.
+2. Cloná o descomprimí el proyecto en `C:\laragon\www\sistema-reservas-hotel` (`composer.json` y `public\` en esa carpeta).
+3. Desde la **terminal de Laragon**, en esa carpeta: `composer install`.
+4. Creá `.env.local` con el MySQL/MariaDB de Laragon (usuario `root` sin contraseña por defecto):
 
 ```env
 DATABASE_URL="mysql://root:@127.0.0.1:3306/sistema_reservas_hotel?serverVersion=8.0&charset=utf8mb4"
 ```
 
-Si Laragon usa MariaDB o MySQL 5.7, ajustá `serverVersion` (por ejemplo `10.4.32-MariaDB` o `5.7`).
+Si es MariaDB, no uses `8.0`. Ajustá `serverVersion` al valor de `SELECT VERSION();` (por ejemplo `10.4.32-MariaDB`).
 
 5. Creá la base, migrá y cargá fixtures:
 
@@ -111,13 +111,9 @@ php bin/console doctrine:migrations:migrate
 php bin/console doctrine:fixtures:load
 ```
 
-6. Servidor embebido:
+6. En Laragon, **Start All** o **Reload** de Apache. Abrí `http://sistema-reservas-hotel.test` (el nombre sigue la carpeta en `www`).
 
-```bash
-php -S 127.0.0.1:8000 -t public
-```
-
-Abrí `http://127.0.0.1:8000`.
+Los `.htaccess` de la raíz y de `public/` hacen que Laragon sirva la app sin cambiar el virtual host ni usar `php -S`. El `.conf` lo genera Laragon solo; no hay que editarlo.
 
 ### Subida de imágenes (`public/.user.ini`)
 
