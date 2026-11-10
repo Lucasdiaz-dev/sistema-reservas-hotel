@@ -1,0 +1,37 @@
+# Laragon serves this folder as the virtual host root
+# (http://sistema-reservas-hotel.test). Send every request into public/
+# so source, config, and env files stay unreachable.
+
+<IfModule mod_rewrite.c>
+    # RewriteRule is forbidden unless FollowSymLinks or SymLinksIfOwnerMatch is enabled.
+    Options +SymLinksIfOwnerMatch
+
+    RewriteEngine On
+
+    # A URL already under /public/ is handled by public/.htaccess.
+    # Rewriting it again would prefix public/ twice.
+    RewriteCond %{REQUEST_URI} !^/public(/|$)
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# If mod_rewrite is unavailable, refuse the project root instead of serving it.
+<IfModule !mod_rewrite.c>
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</IfModule>
+
+# Apache reads these files itself. Do not let HTTP clients download them.
+<FilesMatch "^\.ht">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+Options -Indexes
